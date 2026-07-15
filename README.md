@@ -48,11 +48,27 @@ dotnet test CklViewer.sln
 dotnet run --project src/CklViewer
 ```
 
-To produce a standalone executable:
+## Publishing
+
+**Framework-dependent single file (~10 MB)** — needs the
+[.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+installed on the target machine (one-time install, shared by all .NET apps):
 
 ```powershell
-dotnet publish src/CklViewer -c Release -r win-x64 --self-contained false
+dotnet publish src/CklViewer -c Release -r win-x64 -p:SelfContained=false -p:PublishSingleFile=true -o publish/fd
 ```
+
+**Self-contained single file (~71 MB)** — runs on any 64-bit Windows machine
+with no runtime install; the .NET runtime is bundled and compressed inside the
+exe:
+
+```powershell
+dotnet publish src/CklViewer -c Release -r win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -o publish/sc
+```
+
+Without `EnableCompressionInSingleFile` the self-contained exe is ~156 MB, so
+keep that flag. `PublishTrimmed` is not supported for WPF apps, so ~71 MB is
+about the floor for a fully standalone build.
 
 ## Project layout
 
