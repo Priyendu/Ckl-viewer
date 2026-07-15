@@ -207,6 +207,19 @@ public class Vulnerability : INotifyPropertyChanged
     public string StatusDisplay => Status.ToDisplayString();
     public string CciDisplay => string.Join(", ", Ccis);
 
+    /// <summary>
+    /// Sort key for the Status column so a header click surfaces the findings that
+    /// need action first: Open, then Not Reviewed, then Not a Finding, then Not Applicable.
+    /// </summary>
+    public int StatusSortOrder => Status switch
+    {
+        FindingStatus.Open => 0,
+        FindingStatus.NotReviewed => 1,
+        FindingStatus.NotAFinding => 2,
+        FindingStatus.NotApplicable => 3,
+        _ => 4
+    };
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null, string? alsoNotify = null)

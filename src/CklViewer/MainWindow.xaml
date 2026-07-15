@@ -192,7 +192,7 @@
                         <DataGridTextColumn Header="Vuln ID" Binding="{Binding Vulnerability.VulnId}" Width="100" />
                         <DataGridTextColumn Header="Rule Version" Binding="{Binding Vulnerability.RuleVersion}" Width="140" />
                         <DataGridTextColumn Header="CAT" Binding="{Binding Vulnerability.Category}" Width="70" />
-                        <DataGridTemplateColumn Header="Status" Width="120">
+                        <DataGridTemplateColumn Header="Status" Width="120" SortMemberPath="Vulnerability.StatusSortOrder">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border CornerRadius="3" Padding="6,1" HorizontalAlignment="Left">
