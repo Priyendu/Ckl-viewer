@@ -472,7 +472,15 @@ public class MainViewModel : INotifyPropertyChanged
         var baseName = document.SourcePath is { } source
             ? Path.GetFileNameWithoutExtension(source)
             : (string.IsNullOrWhiteSpace(document.Asset.HostName) ? "checklist" : document.Asset.HostName);
-        return baseName + suffix;
+        return SanitizeFileName(baseName) + suffix;
+    }
+
+    /// <summary>Host names come from untrusted checklist files; strip characters Windows rejects in file names.</summary>
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        return string.IsNullOrWhiteSpace(cleaned) ? "checklist" : cleaned;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

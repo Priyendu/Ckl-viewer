@@ -1,4 +1,5 @@
 using System.IO;
+using System.Xml;
 using System.Xml.Linq;
 using CklViewer.Models;
 
@@ -18,7 +19,8 @@ public static class CklParser
 
     public static ChecklistDocument Parse(Stream stream)
     {
-        var xml = XDocument.Load(stream);
+        using var reader = XmlReader.Create(stream, SafeXml.ReaderSettings);
+        var xml = XDocument.Load(reader);
         var root = xml.Root ?? throw new InvalidDataException("Empty CKL document.");
         if (root.Name.LocalName != "CHECKLIST")
         {

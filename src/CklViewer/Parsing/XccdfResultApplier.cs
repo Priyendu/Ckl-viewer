@@ -1,4 +1,5 @@
 using System.IO;
+using System.Xml;
 using System.Xml.Linq;
 using CklViewer.Models;
 
@@ -22,7 +23,8 @@ public static class XccdfResultApplier
 
     public static List<XccdfRuleResult> Parse(Stream stream, out string benchmarkId)
     {
-        var xml = XDocument.Load(stream);
+        using var reader = XmlReader.Create(stream, SafeXml.ReaderSettings);
+        var xml = XDocument.Load(reader);
         var root = xml.Root ?? throw new InvalidDataException("Empty XCCDF document.");
 
         var testResults = root.Descendants().Where(e => e.Name.LocalName == "TestResult").ToList();

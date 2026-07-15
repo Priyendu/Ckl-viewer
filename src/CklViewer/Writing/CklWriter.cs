@@ -14,24 +14,33 @@ public static class CklWriter
         Write(document, stream);
     }
 
+    /// <summary>
+    /// Drops characters that are not legal in XML 1.0 (e.g. control characters that
+    /// JSON-based CKLB files may contain) so saving as CKL cannot fail mid-write.
+    /// </summary>
+    private static string XmlSafe(string value) =>
+        value.Any(c => c is < ' ' and not ('\t' or '\n' or '\r'))
+            ? new string(value.Where(c => c is >= ' ' or '\t' or '\n' or '\r').ToArray())
+            : value;
+
     public static void Write(ChecklistDocument document, Stream stream)
     {
         var asset = document.Asset;
         var root = new XElement("CHECKLIST",
             new XElement("ASSET",
-                new XElement("ROLE", asset.Role),
-                new XElement("ASSET_TYPE", asset.AssetType),
-                new XElement("MARKING", asset.Marking),
-                new XElement("HOST_NAME", asset.HostName),
-                new XElement("HOST_IP", asset.HostIp),
-                new XElement("HOST_MAC", asset.HostMac),
-                new XElement("HOST_FQDN", asset.HostFqdn),
-                new XElement("TARGET_COMMENT", asset.TargetComment),
-                new XElement("TECH_AREA", asset.TechArea),
-                new XElement("TARGET_KEY", asset.TargetKey),
+                new XElement("ROLE", XmlSafe(asset.Role)),
+                new XElement("ASSET_TYPE", XmlSafe(asset.AssetType)),
+                new XElement("MARKING", XmlSafe(asset.Marking)),
+                new XElement("HOST_NAME", XmlSafe(asset.HostName)),
+                new XElement("HOST_IP", XmlSafe(asset.HostIp)),
+                new XElement("HOST_MAC", XmlSafe(asset.HostMac)),
+                new XElement("HOST_FQDN", XmlSafe(asset.HostFqdn)),
+                new XElement("TARGET_COMMENT", XmlSafe(asset.TargetComment)),
+                new XElement("TECH_AREA", XmlSafe(asset.TechArea)),
+                new XElement("TARGET_KEY", XmlSafe(asset.TargetKey)),
                 new XElement("WEB_OR_DATABASE", asset.WebOrDatabase ? "true" : "false"),
-                new XElement("WEB_DB_SITE", asset.WebDbSite),
-                new XElement("WEB_DB_INSTANCE", asset.WebDbInstance)),
+                new XElement("WEB_DB_SITE", XmlSafe(asset.WebDbSite)),
+                new XElement("WEB_DB_INSTANCE", XmlSafe(asset.WebDbInstance))),
             new XElement("STIGS", document.Stigs.Select(BuildStig)));
 
         var xml = new XDocument(new XDeclaration("1.0", "UTF-8", null),
@@ -60,8 +69,8 @@ public static class CklWriter
         return new XElement("iSTIG",
             new XElement("STIG_INFO", info.Select(pair =>
                 new XElement("SI_DATA",
-                    new XElement("SID_NAME", pair.Key),
-                    new XElement("SID_DATA", pair.Value)))),
+                    new XElement("SID_NAME", XmlSafe(pair.Key)),
+                    new XElement("SID_DATA", XmlSafe(pair.Value))))),
             stig.Vulnerabilities.Select(v => BuildVuln(v, stig)));
     }
 
@@ -72,7 +81,7 @@ public static class CklWriter
         void Add(string attribute, string value) =>
             vulnElement.Add(new XElement("STIG_DATA",
                 new XElement("VULN_ATTRIBUTE", attribute),
-                new XElement("ATTRIBUTE_DATA", value)));
+                new XElement("ATTRIBUTE_DATA", XmlSafe(value))));
 
         Add("Vuln_Num", vuln.VulnId);
         Add("Severity", Severity.Normalize(vuln.SeverityValue));
@@ -112,10 +121,10 @@ public static class CklWriter
 
         vulnElement.Add(
             new XElement("STATUS", vuln.Status.ToCklString()),
-            new XElement("FINDING_DETAILS", vuln.FindingDetails),
-            new XElement("COMMENTS", vuln.Comments),
+            new XElement("FINDING_DETAILS", XmlSafe(vuln.FindingDetails)),
+            new XElement("COMMENTS", XmlSafe(vuln.Comments)),
             new XElement("SEVERITY_OVERRIDE", vuln.SeverityOverride),
-            new XElement("SEVERITY_JUSTIFICATION", vuln.SeverityJustification));
+            new XElement("SEVERITY_JUSTIFICATION", XmlSafe(vuln.SeverityJustification)));
 
         return vulnElement;
     }

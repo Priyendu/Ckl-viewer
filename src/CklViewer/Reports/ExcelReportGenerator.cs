@@ -64,9 +64,9 @@ public static class ExcelReportGenerator
                 var nr = Count(v => v.Status == FindingStatus.NotReviewed);
                 var evaluated = total - na;
 
-                sheet.Cell(row, 1).Value = assetName;
-                sheet.Cell(row, 2).Value = string.IsNullOrWhiteSpace(stig.Title) ? stig.StigId : stig.Title;
-                sheet.Cell(row, 3).Value = $"V{stig.Version} {stig.ReleaseInfo}".Trim();
+                sheet.Cell(row, 1).Value = Sanitize(assetName, 500);
+                sheet.Cell(row, 2).Value = Sanitize(string.IsNullOrWhiteSpace(stig.Title) ? stig.StigId : stig.Title, 500);
+                sheet.Cell(row, 3).Value = Sanitize($"V{stig.Version} {stig.ReleaseInfo}".Trim(), 200);
                 sheet.Cell(row, 4).Value = total;
                 sheet.Cell(row, 5).Value = Count(v => v.Status == FindingStatus.Open && v.EffectiveSeverity == Severity.High);
                 sheet.Cell(row, 6).Value = Count(v => v.Status == FindingStatus.Open && v.EffectiveSeverity == Severity.Medium);
@@ -138,20 +138,20 @@ public static class ExcelReportGenerator
                              v.Status is FindingStatus.Open or FindingStatus.NotReviewed))
                 {
                     var category = vuln.Category;
-                    sheet.Cell(row, 1).Value = $"{vuln.RuleTitle}\n\n{Truncate(vuln.Discussion, 800)}";
-                    sheet.Cell(row, 2).Value = $"{vuln.VulnId} / {vuln.RuleVersion}";
+                    sheet.Cell(row, 1).Value = Sanitize($"{vuln.RuleTitle}\n\n{Sanitize(vuln.Discussion, 800)}", 2000);
+                    sheet.Cell(row, 2).Value = Sanitize($"{vuln.VulnId} / {vuln.RuleVersion}", 200);
                     sheet.Cell(row, 3).Value = category;
-                    sheet.Cell(row, 4).Value = vuln.Mitigations;
+                    sheet.Cell(row, 4).Value = Sanitize(vuln.Mitigations);
                     sheet.Cell(row, 5).Value = category;
                     sheet.Cell(row, 6).Value = "Medium";
                     sheet.Cell(row, 7).Value = "Medium";
                     sheet.Cell(row, 8).Value = category switch { "CAT I" => "High", "CAT III" => "Low", _ => "Medium" };
                     sheet.Cell(row, 9).Value = category switch { "CAT I" => "High", "CAT III" => "Low", _ => "Medium" };
                     sheet.Cell(row, 10).Value = vuln.Status == FindingStatus.Open ? "Ongoing" : "Not Reviewed";
-                    sheet.Cell(row, 11).Value = device;
-                    sheet.Cell(row, 12).Value = string.IsNullOrWhiteSpace(vuln.StigRef) ? stig.Title : vuln.StigRef;
-                    sheet.Cell(row, 13).Value = vuln.CciDisplay;
-                    sheet.Cell(row, 17).Value = vuln.Comments;
+                    sheet.Cell(row, 11).Value = Sanitize(device, 500);
+                    sheet.Cell(row, 12).Value = Sanitize(string.IsNullOrWhiteSpace(vuln.StigRef) ? stig.Title : vuln.StigRef, 500);
+                    sheet.Cell(row, 13).Value = Sanitize(vuln.CciDisplay, 2000);
+                    sheet.Cell(row, 17).Value = Sanitize(vuln.Comments);
 
                     ApplySeverityFill(sheet.Cell(row, 3), vuln.EffectiveSeverity);
                     row++;
@@ -188,23 +188,23 @@ public static class ExcelReportGenerator
             {
                 foreach (var vuln in stig.Vulnerabilities)
                 {
-                    sheet.Cell(row, 1).Value = assetName;
-                    sheet.Cell(row, 2).Value = string.IsNullOrWhiteSpace(stig.Title) ? stig.StigId : stig.Title;
-                    sheet.Cell(row, 3).Value = vuln.VulnId;
-                    sheet.Cell(row, 4).Value = vuln.RuleId;
-                    sheet.Cell(row, 5).Value = vuln.RuleVersion;
+                    sheet.Cell(row, 1).Value = Sanitize(assetName, 500);
+                    sheet.Cell(row, 2).Value = Sanitize(string.IsNullOrWhiteSpace(stig.Title) ? stig.StigId : stig.Title, 500);
+                    sheet.Cell(row, 3).Value = Sanitize(vuln.VulnId, 100);
+                    sheet.Cell(row, 4).Value = Sanitize(vuln.RuleId, 200);
+                    sheet.Cell(row, 5).Value = Sanitize(vuln.RuleVersion, 200);
                     sheet.Cell(row, 6).Value = vuln.Category;
                     sheet.Cell(row, 7).Value = string.IsNullOrWhiteSpace(vuln.SeverityOverride)
                         ? string.Empty
                         : Severity.ToCategory(vuln.SeverityOverride);
                     sheet.Cell(row, 8).Value = vuln.Status.ToDisplayString();
-                    sheet.Cell(row, 9).Value = vuln.RuleTitle;
-                    sheet.Cell(row, 10).Value = Truncate(vuln.Discussion, 2000);
-                    sheet.Cell(row, 11).Value = Truncate(vuln.CheckContent, 2000);
-                    sheet.Cell(row, 12).Value = Truncate(vuln.FixText, 2000);
-                    sheet.Cell(row, 13).Value = vuln.CciDisplay;
-                    sheet.Cell(row, 14).Value = Truncate(vuln.FindingDetails, 2000);
-                    sheet.Cell(row, 15).Value = Truncate(vuln.Comments, 2000);
+                    sheet.Cell(row, 9).Value = Sanitize(vuln.RuleTitle, 1000);
+                    sheet.Cell(row, 10).Value = Sanitize(vuln.Discussion, 2000);
+                    sheet.Cell(row, 11).Value = Sanitize(vuln.CheckContent, 2000);
+                    sheet.Cell(row, 12).Value = Sanitize(vuln.FixText, 2000);
+                    sheet.Cell(row, 13).Value = Sanitize(vuln.CciDisplay, 2000);
+                    sheet.Cell(row, 14).Value = Sanitize(vuln.FindingDetails, 2000);
+                    sheet.Cell(row, 15).Value = Sanitize(vuln.Comments, 2000);
 
                     ApplySeverityFill(sheet.Cell(row, 6), vuln.EffectiveSeverity);
                     if (vuln.Status == FindingStatus.Open)
@@ -266,6 +266,28 @@ public static class ExcelReportGenerator
         cell.Style.Font.SetFontColor(XLColor.White).Font.SetBold();
     }
 
-    private static string Truncate(string value, int maxLength) =>
-        value.Length <= maxLength ? value : value[..maxLength] + " …";
+    /// <summary>Excel's hard limit is 32,767 characters per cell; stay under it with room for the ellipsis.</summary>
+    private const int ExcelCellLimit = 32000;
+
+    /// <summary>
+    /// Makes untrusted checklist text safe for a spreadsheet cell: caps the length
+    /// (Excel rejects cells over 32,767 chars) and strips control characters that
+    /// are invalid in OOXML, keeping tabs and line breaks.
+    /// </summary>
+    private static string Sanitize(string value, int maxLength = ExcelCellLimit)
+    {
+        if (maxLength > ExcelCellLimit)
+        {
+            maxLength = ExcelCellLimit;
+        }
+
+        if (value.Length > maxLength)
+        {
+            value = value[..maxLength] + " …";
+        }
+
+        return value.Any(c => char.IsControl(c) && c is not ('\t' or '\n' or '\r'))
+            ? new string(value.Where(c => !char.IsControl(c) || c is '\t' or '\n' or '\r').ToArray())
+            : value;
+    }
 }

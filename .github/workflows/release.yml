@@ -30,11 +30,13 @@ jobs:
       - name: Publish self-contained
         run: dotnet publish src/CklViewer -c Release -r win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -o publish/sc
 
+      # Note: use $env:GITHUB_REF_NAME instead of `${{ github.ref_name }}` inside scripts —
+      # inline expression interpolation into a script is a script-injection vector.
       - name: Zip artifacts
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}" -replace '^v', ''
-          if ("${{ github.ref_type }}" -ne "tag") { $version = "ci" }
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          if ($env:GITHUB_REF_TYPE -ne 'tag') { $version = 'ci' }
           Compress-Archive -Path publish/fd/* -DestinationPath "CklViewer-$version-win-x64-framework-dependent.zip"
           Compress-Archive -Path publish/sc/* -DestinationPath "CklViewer-$version-win-x64-self-contained.zip"
 
@@ -51,7 +53,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" (Get-ChildItem *.zip) `
-            --title "Ckl-viewer ${{ github.ref_name }}" `
+          gh release create $env:GITHUB_REF_NAME (Get-ChildItem *.zip) `
+            --title "Ckl-viewer $env:GITHUB_REF_NAME" `
             --generate-notes `
             --notes "Unzip and run CklViewer.exe. The framework-dependent zip needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0); the self-contained zip runs on any 64-bit Windows 10/11 machine. Unclassified data only."
