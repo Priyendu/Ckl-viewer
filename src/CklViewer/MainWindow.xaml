@@ -37,8 +37,12 @@
     <DockPanel>
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
-                <Button Command="{Binding OpenCommand}" Padding="8,4" ToolTip="Open a .ckl or .cklb checklist">
+                <Button Command="{Binding OpenCommand}" Padding="8,4"
+                        ToolTip="Open one or more .ckl / .cklb checklists (multi-select supported)">
                     <TextBlock Text="📂 Open" />
+                </Button>
+                <Button Command="{Binding ClearCommand}" Padding="8,4" ToolTip="Close all loaded checklists">
+                    <TextBlock Text="✖ Clear" />
                 </Button>
                 <Separator />
                 <Button Command="{Binding SaveCklCommand}" Padding="8,4" ToolTip="Save as STIG Viewer 2.x .ckl (XML)">
@@ -77,6 +81,7 @@
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                 <StackPanel IsEnabled="{Binding HasDocument}">
                     <TextBlock Text="Target / Host" Style="{StaticResource SectionHeader}" />
+                    <TextBlock Text="(of the selected finding's checklist)" FontSize="10" Foreground="Gray" Margin="0,0,0,2" />
                     <TextBlock Text="Host name" Margin="0,4,0,0" />
                     <TextBox Text="{Binding Asset.HostName, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Text="IP address" Margin="0,4,0,0" />
@@ -129,7 +134,9 @@
                     <TextBlock Text="Severity:" VerticalAlignment="Center" Margin="12,0,4,0" />
                     <ComboBox Width="100" ItemsSource="{Binding SeverityFilters}" SelectedItem="{Binding SeverityFilter}" />
                     <TextBlock Text="STIG:" VerticalAlignment="Center" Margin="12,0,4,0" />
-                    <ComboBox Width="280" ItemsSource="{Binding StigFilters}" SelectedItem="{Binding StigFilter}" />
+                    <ComboBox Width="240" ItemsSource="{Binding StigFilters}" SelectedItem="{Binding StigFilter}" />
+                    <TextBlock Text="Asset:" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ComboBox Width="150" ItemsSource="{Binding AssetFilters}" SelectedItem="{Binding AssetFilter}" />
                 </WrapPanel>
 
                 <!-- Findings grid -->
@@ -143,6 +150,7 @@
                           HeadersVisibility="Column"
                           EnableRowVirtualization="True">
                     <DataGrid.Columns>
+                        <DataGridTextColumn Header="Asset" Binding="{Binding AssetName}" Width="110" />
                         <DataGridTextColumn Header="Vuln ID" Binding="{Binding Vulnerability.VulnId}" Width="100" />
                         <DataGridTextColumn Header="Rule Version" Binding="{Binding Vulnerability.RuleVersion}" Width="140" />
                         <DataGridTextColumn Header="CAT" Binding="{Binding Vulnerability.Category}" Width="70" />

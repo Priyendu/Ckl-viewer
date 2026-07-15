@@ -14,28 +14,34 @@ namespace CklViewer.ViewModels;
 
 public class FindingRow
 {
-    public FindingRow(Vulnerability vulnerability, Stig stig)
+    public FindingRow(Vulnerability vulnerability, Stig stig, ChecklistDocument document)
     {
         Vulnerability = vulnerability;
         Stig = stig;
+        Document = document;
     }
 
     public Vulnerability Vulnerability { get; }
     public Stig Stig { get; }
+    public ChecklistDocument Document { get; }
     public string StigTitle => string.IsNullOrWhiteSpace(Stig.Title) ? Stig.StigId : Stig.Title;
+
+    public string AssetName => string.IsNullOrWhiteSpace(Document.Asset.HostName)
+        ? Document.Title ?? "(unnamed asset)"
+        : Document.Asset.HostName;
 }
 
 public class MainViewModel : INotifyPropertyChanged
 {
     public const string AllFilter = "All";
 
-    private ChecklistDocument? _document;
     private FindingRow? _selectedFinding;
     private string _searchText = string.Empty;
     private string _statusFilter = AllFilter;
     private string _severityFilter = AllFilter;
     private string _stigFilter = AllFilter;
-    private string _statusMessage = "Open a .ckl or .cklb checklist to begin (File → Open, or drop it on the window).";
+    private string _assetFilter = AllFilter;
+    private string _statusMessage = "Open one or more .ckl / .cklb checklists (File → Open supports multi-select, or drop them on the window).";
     private string _summaryText = string.Empty;
 
     public MainViewModel()
@@ -44,13 +50,15 @@ public class MainViewModel : INotifyPropertyChanged
         FindingsView = CollectionViewSource.GetDefaultView(Findings);
         FindingsView.Filter = FilterFinding;
 
-        OpenCommand = new RelayCommand(OpenChecklist);
-        SaveCklCommand = new RelayCommand(SaveCkl, () => Document is not null);
-        ExportCklbCommand = new RelayCommand(ExportCklb, () => Document is not null);
-        ApplyScapCommand = new RelayCommand(ApplyScapResult, () => Document is not null);
-        ExportReportCommand = new RelayCommand(ExportReport, () => Document is not null);
+        OpenCommand = new RelayCommand(OpenChecklists);
+        ClearCommand = new RelayCommand(ClearChecklists, () => Documents.Count > 0);
+        SaveCklCommand = new RelayCommand(SaveCkl, () => CurrentDocument is not null);
+        ExportCklbCommand = new RelayCommand(ExportCklb, () => CurrentDocument is not null);
+        ApplyScapCommand = new RelayCommand(ApplyScapResult, () => Documents.Count > 0);
+        ExportReportCommand = new RelayCommand(ExportReport, () => Documents.Count > 0);
     }
 
+    public ObservableCollection<ChecklistDocument> Documents { get; } = new();
     public ObservableCollection<FindingRow> Findings { get; }
     public ICollectionView FindingsView { get; }
 
@@ -65,6 +73,7 @@ public class MainViewModel : INotifyPropertyChanged
     });
 
     public ObservableCollection<string> StigFilters { get; } = new(new[] { AllFilter });
+    public ObservableCollection<string> AssetFilters { get; } = new(new[] { AllFilter });
 
     public IReadOnlyList<FindingStatus> StatusChoices { get; } = new[]
     {
@@ -77,30 +86,24 @@ public class MainViewModel : INotifyPropertyChanged
     };
 
     public ICommand OpenCommand { get; }
+    public ICommand ClearCommand { get; }
     public ICommand SaveCklCommand { get; }
     public ICommand ExportCklbCommand { get; }
     public ICommand ApplyScapCommand { get; }
     public ICommand ExportReportCommand { get; }
 
-    public ChecklistDocument? Document
+    /// <summary>The checklist that Save/Export act on: the one owning the selected finding, else the first loaded.</summary>
+    public ChecklistDocument? CurrentDocument => SelectedFinding?.Document ?? Documents.FirstOrDefault();
+
+    public Asset? Asset => CurrentDocument?.Asset;
+    public bool HasDocument => Documents.Count > 0;
+
+    public string WindowTitle => Documents.Count switch
     {
-        get => _document;
-        private set
-        {
-            _document = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Asset));
-            OnPropertyChanged(nameof(HasDocument));
-            OnPropertyChanged(nameof(WindowTitle));
-        }
-    }
-
-    public Asset? Asset => Document?.Asset;
-    public bool HasDocument => Document is not null;
-
-    public string WindowTitle => Document is null
-        ? "Ckl-viewer"
-        : $"Ckl-viewer — {Path.GetFileName(Document.SourcePath) ?? Document.Title}";
+        0 => "Ckl-viewer",
+        1 => $"Ckl-viewer — {Path.GetFileName(Documents[0].SourcePath) ?? Documents[0].Title}",
+        _ => $"Ckl-viewer — {Documents.Count} checklists"
+    };
 
     public FindingRow? SelectedFinding
     {
@@ -109,6 +112,8 @@ public class MainViewModel : INotifyPropertyChanged
         {
             _selectedFinding = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentDocument));
+            OnPropertyChanged(nameof(Asset));
         }
     }
 
@@ -136,6 +141,12 @@ public class MainViewModel : INotifyPropertyChanged
         set { _stigFilter = value; OnPropertyChanged(); FindingsView.Refresh(); }
     }
 
+    public string AssetFilter
+    {
+        get => _assetFilter;
+        set { _assetFilter = value; OnPropertyChanged(); FindingsView.Refresh(); }
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -148,47 +159,100 @@ public class MainViewModel : INotifyPropertyChanged
         private set { _summaryText = value; OnPropertyChanged(); }
     }
 
-    public void LoadChecklist(string path)
+    /// <summary>Loads one or more checklist files, appending them to the current session.</summary>
+    public void LoadChecklists(IEnumerable<string> paths)
     {
-        try
+        var loaded = 0;
+        var errors = new List<string>();
+
+        foreach (var path in paths)
         {
-            var document = ChecklistLoader.Load(path);
-            foreach (var row in Findings)
+            try
             {
-                row.Vulnerability.PropertyChanged -= OnVulnerabilityChanged;
-            }
-
-            Findings.Clear();
-            StigFilters.Clear();
-            StigFilters.Add(AllFilter);
-
-            foreach (var stig in document.Stigs)
-            {
-                var title = string.IsNullOrWhiteSpace(stig.Title) ? stig.StigId : stig.Title;
-                if (!StigFilters.Contains(title))
+                var document = ChecklistLoader.Load(path);
+                Documents.Add(document);
+                foreach (var stig in document.Stigs)
                 {
-                    StigFilters.Add(title);
+                    foreach (var vuln in stig.Vulnerabilities)
+                    {
+                        vuln.PropertyChanged += OnVulnerabilityChanged;
+                        Findings.Add(new FindingRow(vuln, stig, document));
+                    }
                 }
 
-                foreach (var vuln in stig.Vulnerabilities)
-                {
-                    vuln.PropertyChanged += OnVulnerabilityChanged;
-                    Findings.Add(new FindingRow(vuln, stig));
-                }
+                loaded++;
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{Path.GetFileName(path)}: {ex.Message}");
+            }
+        }
+
+        RebuildFilters();
+        SelectedFinding ??= Findings.FirstOrDefault();
+        UpdateSummary();
+        OnPropertyChanged(nameof(HasDocument));
+        OnPropertyChanged(nameof(WindowTitle));
+        OnPropertyChanged(nameof(CurrentDocument));
+        OnPropertyChanged(nameof(Asset));
+
+        StatusMessage = errors.Count == 0
+            ? $"Loaded {loaded} checklist(s): {Documents.Count} total, {Findings.Count} finding(s)."
+            : $"Loaded {loaded} checklist(s); {errors.Count} failed. {string.Join(" | ", errors)}";
+
+        if (errors.Count > 0)
+        {
+            System.Windows.MessageBox.Show(string.Join("\n\n", errors), "Some checklists could not be opened",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+    }
+
+    public void LoadChecklist(string path) => LoadChecklists(new[] { path });
+
+    private void ClearChecklists()
+    {
+        foreach (var row in Findings)
+        {
+            row.Vulnerability.PropertyChanged -= OnVulnerabilityChanged;
+        }
+
+        Findings.Clear();
+        Documents.Clear();
+        SelectedFinding = null;
+        RebuildFilters();
+        UpdateSummary();
+        OnPropertyChanged(nameof(HasDocument));
+        OnPropertyChanged(nameof(WindowTitle));
+        OnPropertyChanged(nameof(CurrentDocument));
+        OnPropertyChanged(nameof(Asset));
+        StatusMessage = "All checklists closed.";
+    }
+
+    private void RebuildFilters()
+    {
+        var currentStig = StigFilter;
+        var currentAsset = AssetFilter;
+
+        StigFilters.Clear();
+        StigFilters.Add(AllFilter);
+        AssetFilters.Clear();
+        AssetFilters.Add(AllFilter);
+
+        foreach (var row in Findings)
+        {
+            if (!StigFilters.Contains(row.StigTitle))
+            {
+                StigFilters.Add(row.StigTitle);
             }
 
-            Document = document;
-            StigFilter = AllFilter;
-            SelectedFinding = Findings.FirstOrDefault();
-            UpdateSummary();
-            StatusMessage = $"Loaded {Path.GetFileName(path)}: {document.Stigs.Count} STIG(s), {Findings.Count} finding(s).";
+            if (!AssetFilters.Contains(row.AssetName))
+            {
+                AssetFilters.Add(row.AssetName);
+            }
         }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Failed to load {Path.GetFileName(path)}: {ex.Message}";
-            System.Windows.MessageBox.Show(ex.Message, "Unable to open checklist",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-        }
+
+        StigFilter = StigFilters.Contains(currentStig) ? currentStig : AllFilter;
+        AssetFilter = AssetFilters.Contains(currentAsset) ? currentAsset : AllFilter;
     }
 
     private void OnVulnerabilityChanged(object? sender, PropertyChangedEventArgs e)
@@ -222,6 +286,11 @@ public class MainViewModel : INotifyPropertyChanged
             return false;
         }
 
+        if (AssetFilter != AllFilter && row.AssetName != AssetFilter)
+        {
+            return false;
+        }
+
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
             var needle = SearchText.Trim();
@@ -229,7 +298,8 @@ public class MainViewModel : INotifyPropertyChanged
                    Contains(vuln.RuleVersion, needle) || Contains(vuln.RuleTitle, needle) ||
                    Contains(vuln.Discussion, needle) || Contains(vuln.CheckContent, needle) ||
                    Contains(vuln.FixText, needle) || Contains(vuln.CciDisplay, needle) ||
-                   Contains(vuln.FindingDetails, needle) || Contains(vuln.Comments, needle);
+                   Contains(vuln.FindingDetails, needle) || Contains(vuln.Comments, needle) ||
+                   Contains(row.AssetName, needle);
         }
 
         return true;
@@ -240,7 +310,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void UpdateSummary()
     {
-        if (Document is null)
+        if (Documents.Count == 0)
         {
             SummaryText = string.Empty;
             return;
@@ -256,6 +326,7 @@ public class MainViewModel : INotifyPropertyChanged
         var nr = vulns.Count(v => v.Status == FindingStatus.NotReviewed);
 
         SummaryText =
+            $"Checklists: {Documents.Count}\n" +
             $"Total: {vulns.Count}\n" +
             $"Open: {open}  (CAT I: {catI} · CAT II: {catIi} · CAT III: {catIii})\n" +
             $"Not a Finding: {naf}\n" +
@@ -263,73 +334,77 @@ public class MainViewModel : INotifyPropertyChanged
             $"Not Reviewed: {nr}";
     }
 
-    private void OpenChecklist()
+    private void OpenChecklists()
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Open STIG checklist",
-            Filter = "STIG checklists (*.ckl;*.cklb)|*.ckl;*.cklb|All files (*.*)|*.*"
+            Title = "Open STIG checklists (multi-select supported)",
+            Filter = "STIG checklists (*.ckl;*.cklb)|*.ckl;*.cklb|All files (*.*)|*.*",
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() == true)
         {
-            LoadChecklist(dialog.FileName);
+            LoadChecklists(dialog.FileNames);
         }
     }
 
     private void SaveCkl()
     {
-        if (Document is null)
+        var document = CurrentDocument;
+        if (document is null)
         {
             return;
         }
 
         var dialog = new SaveFileDialog
         {
-            Title = "Save checklist as CKL",
+            Title = $"Save checklist as CKL — {AssetLabel(document)}",
             Filter = "STIG Viewer 2.x checklist (*.ckl)|*.ckl",
-            FileName = SuggestFileName(".ckl")
+            FileName = SuggestFileName(document, ".ckl")
         };
 
         if (dialog.ShowDialog() == true)
         {
-            CklWriter.WriteFile(Document, dialog.FileName);
-            StatusMessage = $"Saved {Path.GetFileName(dialog.FileName)}.";
+            CklWriter.WriteFile(document, dialog.FileName);
+            StatusMessage = $"Saved {AssetLabel(document)} to {Path.GetFileName(dialog.FileName)}.";
         }
     }
 
     private void ExportCklb()
     {
-        if (Document is null)
+        var document = CurrentDocument;
+        if (document is null)
         {
             return;
         }
 
         var dialog = new SaveFileDialog
         {
-            Title = "Export checklist as CKLB",
+            Title = $"Export checklist as CKLB — {AssetLabel(document)}",
             Filter = "STIG Viewer 3.x checklist (*.cklb)|*.cklb",
-            FileName = SuggestFileName(".cklb")
+            FileName = SuggestFileName(document, ".cklb")
         };
 
         if (dialog.ShowDialog() == true)
         {
-            CklbWriter.WriteFile(Document, dialog.FileName);
-            StatusMessage = $"Exported {Path.GetFileName(dialog.FileName)}.";
+            CklbWriter.WriteFile(document, dialog.FileName);
+            StatusMessage = $"Exported {AssetLabel(document)} to {Path.GetFileName(dialog.FileName)}.";
         }
     }
 
     private void ApplyScapResult()
     {
-        if (Document is null)
+        if (Documents.Count == 0)
         {
             return;
         }
 
         var dialog = new OpenFileDialog
         {
-            Title = "Apply SCAP XCCDF result",
-            Filter = "XCCDF results (*.xml)|*.xml|All files (*.*)|*.*"
+            Title = "Apply SCAP XCCDF results (multi-select supported)",
+            Filter = "XCCDF results (*.xml)|*.xml|All files (*.*)|*.*",
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() != true)
@@ -339,12 +414,22 @@ public class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            var outcome = XccdfResultApplier.Apply(Document, dialog.FileName);
+            int matched = 0, updated = 0, total = 0;
+            foreach (var file in dialog.FileNames)
+            {
+                foreach (var document in Documents)
+                {
+                    var outcome = XccdfResultApplier.Apply(document, file);
+                    matched += outcome.Matched;
+                    updated += outcome.Updated;
+                    total = Math.Max(total, outcome.TotalResults);
+                }
+            }
+
             UpdateSummary();
             FindingsView.Refresh();
             StatusMessage =
-                $"SCAP results from {outcome.BenchmarkId}: {outcome.TotalResults} result(s), " +
-                $"{outcome.Matched} matched this checklist, {outcome.Updated} status(es) updated.";
+                $"SCAP results applied across {Documents.Count} checklist(s): {matched} match(es), {updated} status(es) updated.";
         }
         catch (Exception ex)
         {
@@ -356,30 +441,37 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void ExportReport()
     {
-        if (Document is null)
+        if (Documents.Count == 0)
         {
             return;
         }
 
         var dialog = new SaveFileDialog
         {
-            Title = "Export Excel report",
+            Title = $"Export Excel report ({Documents.Count} checklist(s))",
             Filter = "Excel workbook (*.xlsx)|*.xlsx",
-            FileName = SuggestFileName("_report.xlsx")
+            FileName = Documents.Count == 1
+                ? SuggestFileName(Documents[0], "_report.xlsx")
+                : $"stig_report_{DateTime.Now:yyyyMMdd}.xlsx"
         };
 
         if (dialog.ShowDialog() == true)
         {
-            ExcelReportGenerator.WriteReport(new[] { Document }, dialog.FileName);
-            StatusMessage = $"Report written to {Path.GetFileName(dialog.FileName)}.";
+            ExcelReportGenerator.WriteReport(Documents.ToList(), dialog.FileName);
+            StatusMessage = $"Report for {Documents.Count} checklist(s) written to {Path.GetFileName(dialog.FileName)}.";
         }
     }
 
-    private string SuggestFileName(string suffix)
+    private static string AssetLabel(ChecklistDocument document) =>
+        string.IsNullOrWhiteSpace(document.Asset.HostName)
+            ? document.Title ?? "(unnamed asset)"
+            : document.Asset.HostName;
+
+    private static string SuggestFileName(ChecklistDocument document, string suffix)
     {
-        var baseName = Document?.SourcePath is { } source
+        var baseName = document.SourcePath is { } source
             ? Path.GetFileNameWithoutExtension(source)
-            : (string.IsNullOrWhiteSpace(Document?.Asset.HostName) ? "checklist" : Document!.Asset.HostName);
+            : (string.IsNullOrWhiteSpace(document.Asset.HostName) ? "checklist" : document.Asset.HostName);
         return baseName + suffix;
     }
 

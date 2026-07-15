@@ -9,10 +9,13 @@ Built with C# / .NET 8 / WPF.
 ## Features
 
 - **Open `.ckl` (XML) and `.cklb` (JSON)** — both DISA STIG Viewer 2.x and 3.x
-  checklist formats, via the Open button, drag-and-drop onto the window, or a
-  command-line argument.
+  checklist formats, via the Open button, drag-and-drop onto the window, or
+  command-line arguments.
+- **Multi-checklist sessions (Vulnerator-style)** — multi-select several
+  checklists in the Open dialog (or drop them all at once); findings from every
+  asset are aggregated into one view, one summary, and one report.
 - **Browse and filter findings** — search across rule text, filter by status,
-  severity (CAT I/II/III), and STIG; color-coded statuses.
+  severity (CAT I/II/III), STIG, and asset; color-coded statuses.
 - **Edit inline** — status, finding details, comments, severity override with
   justification, and target/host information; live summary counts.
 - **Apply SCAP scan results** — load an XCCDF result file and statuses are

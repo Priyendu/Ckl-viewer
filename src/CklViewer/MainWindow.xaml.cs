@@ -12,10 +12,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _viewModel;
 
-        var args = Environment.GetCommandLineArgs();
-        if (args.Length > 1 && System.IO.File.Exists(args[1]))
+        var files = Environment.GetCommandLineArgs().Skip(1).Where(System.IO.File.Exists).ToArray();
+        if (files.Length > 0)
         {
-            _viewModel.LoadChecklist(args[1]);
+            _viewModel.LoadChecklists(files);
         }
     }
 
@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
         {
-            _viewModel.LoadChecklist(files[0]);
+            _viewModel.LoadChecklists(files);
         }
     }
 }

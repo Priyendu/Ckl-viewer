@@ -67,4 +67,37 @@ public class XccdfAndReportTests
             File.Delete(reportPath);
         }
     }
+
+    [Fact]
+    public void ExcelReportAggregatesMultipleChecklists()
+    {
+        var first = SampleData.BuildChecklist();
+        var second = SampleData.BuildChecklist();
+        second.Asset.HostName = "SECOND-HOST";
+        var reportPath = Path.Combine(Path.GetTempPath(), $"ckl-viewer-test-{Guid.NewGuid():N}.xlsx");
+
+        try
+        {
+            ExcelReportGenerator.WriteReport(new[] { first, second }, reportPath);
+
+            using var workbook = new XLWorkbook(reportPath);
+
+            // Executive Summary has one row per asset/STIG pair.
+            var summary = workbook.Worksheet("Executive Summary");
+            var assets = summary.Column(1).CellsUsed()
+                .Select(c => c.GetString())
+                .Where(v => v is "SAMPLE-HOST" or "SECOND-HOST")
+                .ToList();
+            Assert.Equal(2, assets.Count);
+
+            // Details sheet has rows for both assets (header + 3 findings each).
+            var details = workbook.Worksheet("Vulnerability Details");
+            Assert.Equal(7, details.Column(3).CellsUsed().Count());
+            Assert.Contains(details.Column(1).CellsUsed(), c => c.GetString() == "SECOND-HOST");
+        }
+        finally
+        {
+            File.Delete(reportPath);
+        }
+    }
 }
