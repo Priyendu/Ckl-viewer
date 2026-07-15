@@ -35,6 +35,10 @@
         </Style>
     </Window.Resources>
 
+    <Window.CommandBindings>
+        <CommandBinding Command="Help" Executed="About_Executed" />
+    </Window.CommandBindings>
+
     <DockPanel>
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
@@ -61,6 +65,10 @@
                 <Button Command="{Binding ExportReportCommand}" Padding="8,4"
                         ToolTip="Generate a Vulnerator-style Excel report (Summary, POA&amp;M, Details)">
                     <TextBlock Text="📊 Excel Report" />
+                </Button>
+                <Separator />
+                <Button Command="Help" Padding="8,4" ToolTip="About Ckl-viewer (F1)">
+                    <TextBlock Text="ℹ About" />
                 </Button>
             </ToolBar>
         </ToolBarTray>

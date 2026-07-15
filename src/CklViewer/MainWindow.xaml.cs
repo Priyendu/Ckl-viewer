@@ -19,6 +19,9 @@ public partial class MainWindow : Window
         }
     }
 
+    private void About_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e) =>
+        new AboutWindow { Owner = this }.ShowDialog();
+
     private void Window_DragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;

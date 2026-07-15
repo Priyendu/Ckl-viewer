@@ -6,7 +6,10 @@ A Windows desktop viewer/editor for DISA STIG checklists, inspired by
 [cyber.trackr.live/ckl-viewer](https://cyber.trackr.live/ckl-viewer), with
 Vulnerator-style Excel reporting.
 
-Built with C# / .NET 8 / WPF.
+Built with C# / .NET 8 / WPF, because the universe contained exactly zero
+apps that could open both `.ckl` and `.cklb` *and* still do what
+[Vulnerator](https://github.com/Vulnerator/Vulnerator) used to do. Nature
+abhors a vacuum. Assessors abhor it more.
 
 ## Features
 
@@ -79,5 +82,9 @@ src/CklViewer/
   Writing/      CKL and CKLB writers
   Reports/      Excel report generator (ClosedXML)
   ViewModels/   WPF MVVM layer
-tests/CklViewer.Tests/  Round-trip, SCAP, and report unit tests
+tests/CklViewer.Tests/  Round-trip, SCAP, report, and security unit tests
 ```
+
+## License
+
+[MIT](LICENSE) © Priyendu

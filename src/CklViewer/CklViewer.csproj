@@ -9,8 +9,10 @@
     <AssemblyName>CklViewer</AssemblyName>
     <RootNamespace>CklViewer</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Priyendu</Authors>
+    <Copyright>Copyright (c) 2026 Priyendu</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Ckl-viewer: DISA STIG checklist (.ckl / .cklb) viewer and editor with Vulnerator-style reporting.</Description>
   </PropertyGroup>
 
@@ -20,6 +22,10 @@
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CklViewer.Tests" />
   </ItemGroup>
 
 </Project>
