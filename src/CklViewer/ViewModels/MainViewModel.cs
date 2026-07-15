@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using System.Windows.Input;
+using CklViewer.Controls;
 using CklViewer.Models;
 using CklViewer.Parsing;
 using CklViewer.Reports;
@@ -43,6 +44,7 @@ public class MainViewModel : INotifyPropertyChanged
     private string _assetFilter = AllFilter;
     private string _statusMessage = "Open one or more .ckl / .cklb checklists (File → Open supports multi-select, or drop them on the window).";
     private string _summaryText = string.Empty;
+    private IReadOnlyList<ChartSegment> _statusSegments = Array.Empty<ChartSegment>();
 
     public MainViewModel()
     {
@@ -159,6 +161,12 @@ public class MainViewModel : INotifyPropertyChanged
     {
         get => _summaryText;
         private set { _summaryText = value; OnPropertyChanged(); }
+    }
+
+    public IReadOnlyList<ChartSegment> StatusSegments
+    {
+        get => _statusSegments;
+        private set { _statusSegments = value; OnPropertyChanged(); }
     }
 
     /// <summary>Loads one or more checklist files, appending them to the current session.</summary>
@@ -315,6 +323,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (Documents.Count == 0)
         {
             SummaryText = string.Empty;
+            StatusSegments = Array.Empty<ChartSegment>();
             return;
         }
 
@@ -326,6 +335,8 @@ public class MainViewModel : INotifyPropertyChanged
         var naf = vulns.Count(v => v.Status == FindingStatus.NotAFinding);
         var na = vulns.Count(v => v.Status == FindingStatus.NotApplicable);
         var nr = vulns.Count(v => v.Status == FindingStatus.NotReviewed);
+
+        StatusSegments = ChartSegment.StatusBreakdown(open, naf, na, nr);
 
         SummaryText =
             $"Checklists: {Documents.Count}\n" +

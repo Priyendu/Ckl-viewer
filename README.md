@@ -57,6 +57,8 @@ bundled inside or shared with your PC.
 - **Shows findings at a glance** — color-coded statuses (Open, Not a Finding,
   Not Applicable, Not Reviewed) and severity (CAT I / II / III). Search and
   filter by status, severity, STIG, or asset.
+- **Status donut chart** — a live pie of the finding statuses across everything
+  you've loaded, updating as you assess.
 - **Lets you edit** — set a finding's status, type finding details and comments,
   apply a severity override, and update host information. Running totals update
   as you go.
