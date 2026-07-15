@@ -51,6 +51,7 @@ public class MainViewModel : INotifyPropertyChanged
         FindingsView.Filter = FilterFinding;
 
         OpenCommand = new RelayCommand(OpenChecklists);
+        NewFromStigCommand = new RelayCommand(NewFromStig);
         ClearCommand = new RelayCommand(ClearChecklists, () => Documents.Count > 0);
         SaveCklCommand = new RelayCommand(SaveCkl, () => CurrentDocument is not null);
         ExportCklbCommand = new RelayCommand(ExportCklb, () => CurrentDocument is not null);
@@ -86,6 +87,7 @@ public class MainViewModel : INotifyPropertyChanged
     };
 
     public ICommand OpenCommand { get; }
+    public ICommand NewFromStigCommand { get; }
     public ICommand ClearCommand { get; }
     public ICommand SaveCklCommand { get; }
     public ICommand ExportCklbCommand { get; }
@@ -346,6 +348,29 @@ public class MainViewModel : INotifyPropertyChanged
         if (dialog.ShowDialog() == true)
         {
             LoadChecklists(dialog.FileNames);
+        }
+    }
+
+    private void NewFromStig()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "New checklist from a STIG benchmark",
+            Filter = "STIG benchmark (*.xml;*.zip)|*.xml;*.zip|All files (*.*)|*.*",
+            Multiselect = true
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            var before = Documents.Count;
+            LoadChecklists(dialog.FileNames);
+            var created = Documents.Count - before;
+            if (created > 0)
+            {
+                var findings = Findings.Count(f => f.Vulnerability.Status == FindingStatus.NotReviewed);
+                StatusMessage = $"Created {created} checklist(s) from STIG benchmark(s). " +
+                                $"All findings start as Not Reviewed ({findings} awaiting review). Save as .ckl or .cklb when ready.";
+            }
         }
     }
 

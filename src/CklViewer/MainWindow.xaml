@@ -46,6 +46,10 @@
                         ToolTip="Open one or more .ckl / .cklb checklists (multi-select supported)">
                     <TextBlock Text="📂 Open" />
                 </Button>
+                <Button Command="{Binding NewFromStigCommand}" Padding="8,4"
+                        ToolTip="Create a fresh checklist from a DISA STIG benchmark (XCCDF .xml or the .zip it ships in)">
+                    <TextBlock Text="🆕 New from STIG" />
+                </Button>
                 <Button Command="{Binding ClearCommand}" Padding="8,4" ToolTip="Close all loaded checklists">
                     <TextBlock Text="✖ Clear" />
                 </Button>

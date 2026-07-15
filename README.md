@@ -47,6 +47,10 @@ bundled inside or shared with your PC.
 
 ## What it does
 
+- **Starts a checklist from a STIG** — click **New from STIG** and point it at a
+  DISA STIG benchmark (the XCCDF `.xml`, or the `.zip` it downloads in). Every
+  rule becomes a Not Reviewed finding, ready to assess — no need to open STIG
+  Viewer first.
 - **Opens both checklist formats** — `.ckl` (STIG Viewer 2.x) and `.cklb`
   (STIG Viewer 3.x). Just drag your files onto the window, or use the Open
   button. Open several at once and it merges them into one view.
@@ -69,7 +73,8 @@ and full **Vulnerability Details** with every rule, ready to filter and share.
 
 ## Using it in three steps
 
-1. **Open** your checklist(s) — drag `.ckl` / `.cklb` files onto the window.
+1. **Open** your checklist(s) — drag `.ckl` / `.cklb` files onto the window, or
+   click **New from STIG** to start a fresh one from a benchmark.
 2. **Review or edit** — click any finding to read the rule, check, and fix text;
    change its status or add notes on the right.
 3. **Report** — click **📊 Excel Report** and pick where to save. Done.
