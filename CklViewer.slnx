@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CklViewer/CklViewer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CklViewer.Tests/CklViewer.Tests.csproj" />
+  </Folder>
+</Solution>

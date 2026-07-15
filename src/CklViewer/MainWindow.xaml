@@ -1,0 +1,250 @@
+<Window x:Class="CklViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:CklViewer.Converters"
+        xmlns:vm="clr-namespace:CklViewer.ViewModels"
+        Title="{Binding WindowTitle}"
+        Height="820" Width="1320"
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        Drop="Window_Drop"
+        DragOver="Window_DragOver">
+    <Window.Resources>
+        <conv:StatusDisplayConverter x:Key="StatusDisplay" />
+        <conv:SeverityDisplayConverter x:Key="SeverityDisplay" />
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="#1F4E79" />
+        </Style>
+
+        <Style x:Key="RuleTextBox" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style x:Key="EditTextBox" TargetType="TextBox">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button Command="{Binding OpenCommand}" Padding="8,4" ToolTip="Open a .ckl or .cklb checklist">
+                    <TextBlock Text="📂 Open" />
+                </Button>
+                <Separator />
+                <Button Command="{Binding SaveCklCommand}" Padding="8,4" ToolTip="Save as STIG Viewer 2.x .ckl (XML)">
+                    <TextBlock Text="💾 Save CKL" />
+                </Button>
+                <Button Command="{Binding ExportCklbCommand}" Padding="8,4" ToolTip="Export as STIG Viewer 3.x .cklb (JSON)">
+                    <TextBlock Text="⬇ Export CKLB" />
+                </Button>
+                <Separator />
+                <Button Command="{Binding ApplyScapCommand}" Padding="8,4"
+                        ToolTip="Apply a SCAP XCCDF result file — statuses are updated by rule version">
+                    <TextBlock Text="🛰 Apply SCAP Result" />
+                </Button>
+                <Separator />
+                <Button Command="{Binding ExportReportCommand}" Padding="8,4"
+                        ToolTip="Generate a Vulnerator-style Excel report (Summary, POA&amp;M, Details)">
+                    <TextBlock Text="📊 Excel Report" />
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid Margin="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="270" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: asset info + summary -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel IsEnabled="{Binding HasDocument}">
+                    <TextBlock Text="Target / Host" Style="{StaticResource SectionHeader}" />
+                    <TextBlock Text="Host name" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.HostName, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="IP address" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.HostIp, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="MAC address" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.HostMac, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="FQDN" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.HostFqdn, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Role" Margin="0,4,0,0" />
+                    <ComboBox SelectedItem="{Binding Asset.Role}" IsEditable="True"
+                              Text="{Binding Asset.Role, UpdateSourceTrigger=LostFocus}">
+                        <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">None</sys:String>
+                        <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">Workstation</sys:String>
+                        <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">Member Server</sys:String>
+                        <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">Domain Controller</sys:String>
+                    </ComboBox>
+                    <TextBlock Text="Technology area" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.TechArea, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Marking" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.Marking, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Comments" Margin="0,4,0,0" />
+                    <TextBox Text="{Binding Asset.TargetComment, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource EditTextBox}" MinHeight="48" />
+
+                    <TextBlock Text="Summary" Style="{StaticResource SectionHeader}" />
+                    <Border Background="#F3F6FA" CornerRadius="4" Padding="8">
+                        <TextBlock Text="{Binding SummaryText}" FontFamily="Consolas" />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
+
+            <!-- Right: filters + findings + details -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="300" />
+                </Grid.RowDefinitions>
+
+                <!-- Filters -->
+                <WrapPanel Grid.Row="0" Margin="0,0,0,6">
+                    <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <TextBox Width="240" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
+                             VerticalAlignment="Center" />
+                    <TextBlock Text="Status:" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ComboBox Width="130" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}" />
+                    <TextBlock Text="Severity:" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ComboBox Width="100" ItemsSource="{Binding SeverityFilters}" SelectedItem="{Binding SeverityFilter}" />
+                    <TextBlock Text="STIG:" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ComboBox Width="280" ItemsSource="{Binding StigFilters}" SelectedItem="{Binding StigFilter}" />
+                </WrapPanel>
+
+                <!-- Findings grid -->
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding FindingsView}"
+                          SelectedItem="{Binding SelectedFinding}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          EnableRowVirtualization="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Vuln ID" Binding="{Binding Vulnerability.VulnId}" Width="100" />
+                        <DataGridTextColumn Header="Rule Version" Binding="{Binding Vulnerability.RuleVersion}" Width="140" />
+                        <DataGridTextColumn Header="CAT" Binding="{Binding Vulnerability.Category}" Width="70" />
+                        <DataGridTemplateColumn Header="Status" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="3" Padding="6,1" HorizontalAlignment="Left">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#FFE9A6" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Vulnerability.Status}" Value="Open">
+                                                        <Setter Property="Background" Value="#F5B7B1" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Vulnerability.Status}" Value="NotAFinding">
+                                                        <Setter Property="Background" Value="#ABEBC6" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Vulnerability.Status}" Value="NotApplicable">
+                                                        <Setter Property="Background" Value="#D5DBDB" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Vulnerability.StatusDisplay}" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Rule Title" Binding="{Binding Vulnerability.RuleTitle}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" Height="6" ResizeDirection="Rows" />
+
+                <!-- Details pane -->
+                <Grid Grid.Row="3" DataContext="{Binding SelectedFinding}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TabControl Grid.Column="0" Margin="0,0,6,0">
+                        <TabItem Header="Rule">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="{Binding Vulnerability.RuleTitle}" FontWeight="Bold" TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,4,0,0" Foreground="Gray">
+                                        <Run Text="{Binding Vulnerability.VulnId, Mode=OneWay}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding Vulnerability.RuleId, Mode=OneWay}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding Vulnerability.RuleVersion, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock Text="Discussion" Style="{StaticResource SectionHeader}" />
+                                    <TextBox Text="{Binding Vulnerability.Discussion, Mode=OneWay}" Style="{StaticResource RuleTextBox}" />
+                                    <TextBlock Text="CCI references" Style="{StaticResource SectionHeader}" />
+                                    <TextBox Text="{Binding Vulnerability.CciDisplay, Mode=OneWay}" Style="{StaticResource RuleTextBox}" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                        <TabItem Header="Check">
+                            <TextBox Text="{Binding Vulnerability.CheckContent, Mode=OneWay}" Style="{StaticResource RuleTextBox}" Margin="8" />
+                        </TabItem>
+                        <TabItem Header="Fix">
+                            <TextBox Text="{Binding Vulnerability.FixText, Mode=OneWay}" Style="{StaticResource RuleTextBox}" Margin="8" />
+                        </TabItem>
+                    </TabControl>
+
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Assessment" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Text="Status" Margin="0,4,0,0" />
+                            <ComboBox ItemsSource="{Binding DataContext.StatusChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedItem="{Binding Vulnerability.Status}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource StatusDisplay}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="Severity override" Margin="0,8,0,0" />
+                            <ComboBox ItemsSource="{Binding DataContext.SeverityOverrideChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedItem="{Binding Vulnerability.SeverityOverride}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource SeverityDisplay}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="Override justification" Margin="0,8,0,0" />
+                            <TextBox Text="{Binding Vulnerability.SeverityJustification, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource EditTextBox}" MinHeight="40" />
+                            <TextBlock Text="Finding details" Margin="0,8,0,0" />
+                            <TextBox Text="{Binding Vulnerability.FindingDetails, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource EditTextBox}" MinHeight="80" />
+                            <TextBlock Text="Comments" Margin="0,8,0,0" />
+                            <TextBox Text="{Binding Vulnerability.Comments, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource EditTextBox}" MinHeight="60" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
