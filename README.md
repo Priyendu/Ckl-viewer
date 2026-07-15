@@ -1,5 +1,7 @@
 # Ckl-viewer
 
+<img src="docs/icon-256.png" alt="Ckl-viewer icon" width="96" align="right" />
+
 A Windows desktop viewer/editor for DISA STIG checklists, inspired by
 [cyber.trackr.live/ckl-viewer](https://cyber.trackr.live/ckl-viewer), with
 Vulnerator-style Excel reporting.

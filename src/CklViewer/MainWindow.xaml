@@ -4,6 +4,7 @@
         xmlns:conv="clr-namespace:CklViewer.Converters"
         xmlns:vm="clr-namespace:CklViewer.ViewModels"
         Title="{Binding WindowTitle}"
+        Icon="/Assets/app.ico"
         Height="820" Width="1320"
         WindowStartupLocation="CenterScreen"
         AllowDrop="True"

@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>CklViewer</AssemblyName>
     <RootNamespace>CklViewer</RootNamespace>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <Version>1.0.0</Version>
     <Authors>Priyendu</Authors>
     <Description>Ckl-viewer: DISA STIG checklist (.ckl / .cklb) viewer and editor with Vulnerator-style reporting.</Description>
@@ -15,6 +16,10 @@
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
   </ItemGroup>
 
 </Project>
