@@ -53,8 +53,8 @@ public class MainViewModel : INotifyPropertyChanged
         OpenCommand = new RelayCommand(OpenChecklists);
         NewFromStigCommand = new RelayCommand(NewFromStig);
         ClearCommand = new RelayCommand(ClearChecklists, () => Documents.Count > 0);
-        SaveCklCommand = new RelayCommand(SaveCkl, () => CurrentDocument is not null);
-        ExportCklbCommand = new RelayCommand(ExportCklb, () => CurrentDocument is not null);
+        SaveCommand = new RelayCommand(Save, () => CurrentDocument is not null);
+        SaveAsCommand = new RelayCommand(SaveAs, () => CurrentDocument is not null);
         ApplyScapCommand = new RelayCommand(ApplyScapResult, () => Documents.Count > 0);
         ExportReportCommand = new RelayCommand(ExportReport, () => Documents.Count > 0);
     }
@@ -89,8 +89,8 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand OpenCommand { get; }
     public ICommand NewFromStigCommand { get; }
     public ICommand ClearCommand { get; }
-    public ICommand SaveCklCommand { get; }
-    public ICommand ExportCklbCommand { get; }
+    public ICommand SaveCommand { get; }
+    public ICommand SaveAsCommand { get; }
     public ICommand ApplyScapCommand { get; }
     public ICommand ExportReportCommand { get; }
 
@@ -374,7 +374,8 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private void SaveCkl()
+    /// <summary>Writes back to the file the checklist was opened from, in its original format.</summary>
+    private void Save()
     {
         var document = CurrentDocument;
         if (document is null)
@@ -382,40 +383,81 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        // No known file yet (e.g. imported from a STIG benchmark) — fall through to Save As.
+        if (string.IsNullOrWhiteSpace(document.SourcePath))
+        {
+            SaveAs();
+            return;
+        }
+
+        WriteDocument(document, document.SourcePath!, document.SourceFormat);
+        StatusMessage = $"Saved {Path.GetFileName(document.SourcePath)}.";
+    }
+
+    /// <summary>Prompts for a location and format (.ckl or .cklb) and saves a copy, then edits it going forward.</summary>
+    private void SaveAs()
+    {
+        var document = CurrentDocument;
+        if (document is null)
+        {
+            return;
+        }
+
+        var startAsCklb = document.SourceFormat == ChecklistFormat.Cklb;
         var dialog = new SaveFileDialog
         {
-            Title = $"Save checklist as CKL — {AssetLabel(document)}",
-            Filter = "STIG Viewer 2.x checklist (*.ckl)|*.ckl",
-            FileName = SuggestFileName(document, ".ckl")
+            Title = $"Save checklist as… — {AssetLabel(document)}",
+            Filter = "STIG Viewer 2.x checklist (*.ckl)|*.ckl|STIG Viewer 3.x checklist (*.cklb)|*.cklb",
+            FilterIndex = startAsCklb ? 2 : 1,
+            FileName = SuggestFileName(document, startAsCklb ? ".cklb" : ".ckl")
         };
 
-        if (dialog.ShowDialog() == true)
+        if (dialog.ShowDialog() != true)
         {
-            CklWriter.WriteFile(document, dialog.FileName);
-            StatusMessage = $"Saved {AssetLabel(document)} to {Path.GetFileName(dialog.FileName)}.";
+            return;
+        }
+
+        var format = DetermineFormat(dialog.FileName, dialog.FilterIndex);
+        var path = EnsureExtension(dialog.FileName, format);
+        WriteDocument(document, path, format);
+
+        // From here on, plain Save writes back to this new file and format.
+        document.SourcePath = path;
+        document.SourceFormat = format;
+        OnPropertyChanged(nameof(WindowTitle));
+        StatusMessage = $"Saved {Path.GetFileName(path)} ({(format == ChecklistFormat.Cklb ? "CKLB" : "CKL")}).";
+    }
+
+    private static void WriteDocument(ChecklistDocument document, string path, ChecklistFormat format)
+    {
+        if (format == ChecklistFormat.Cklb)
+        {
+            CklbWriter.WriteFile(document, path);
+        }
+        else
+        {
+            CklWriter.WriteFile(document, path);
         }
     }
 
-    private void ExportCklb()
+    /// <summary>A typed extension wins over the chosen filter; otherwise the filter picks the format.</summary>
+    internal static ChecklistFormat DetermineFormat(string path, int filterIndex)
     {
-        var document = CurrentDocument;
-        if (document is null)
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+        return extension switch
         {
-            return;
-        }
-
-        var dialog = new SaveFileDialog
-        {
-            Title = $"Export checklist as CKLB — {AssetLabel(document)}",
-            Filter = "STIG Viewer 3.x checklist (*.cklb)|*.cklb",
-            FileName = SuggestFileName(document, ".cklb")
+            ".cklb" => ChecklistFormat.Cklb,
+            ".ckl" => ChecklistFormat.Ckl,
+            _ => filterIndex == 2 ? ChecklistFormat.Cklb : ChecklistFormat.Ckl
         };
+    }
 
-        if (dialog.ShowDialog() == true)
-        {
-            CklbWriter.WriteFile(document, dialog.FileName);
-            StatusMessage = $"Exported {AssetLabel(document)} to {Path.GetFileName(dialog.FileName)}.";
-        }
+    internal static string EnsureExtension(string path, ChecklistFormat format)
+    {
+        var wanted = format == ChecklistFormat.Cklb ? ".cklb" : ".ckl";
+        return Path.GetExtension(path).Equals(wanted, StringComparison.OrdinalIgnoreCase)
+            ? path
+            : Path.ChangeExtension(path, wanted);
     }
 
     private void ApplyScapResult()

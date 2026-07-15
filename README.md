@@ -62,7 +62,8 @@ bundled inside or shared with your PC.
   as you go.
 - **Applies your SCAP scan** — drop an XCCDF scan-result file and it updates
   every matching finding automatically.
-- **Saves back out** — as `.ckl` or `.cklb`, ready to open in DISA STIG Viewer.
+- **Saves back out** — **Save** (Ctrl+S) writes back to the file you opened;
+  **Save As…** lets you choose `.ckl` or `.cklb`, ready to open in DISA STIG Viewer.
 - **Builds Excel reports in one click** — a polished, Vulnerator-style workbook.
 
 ![Excel report](docs/img/screenshot-report.png)

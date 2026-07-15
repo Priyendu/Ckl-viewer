@@ -39,6 +39,10 @@
         <CommandBinding Command="Help" Executed="About_Executed" />
     </Window.CommandBindings>
 
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveCommand}" />
+    </Window.InputBindings>
+
     <DockPanel>
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
@@ -54,11 +58,13 @@
                     <TextBlock Text="✖ Clear" />
                 </Button>
                 <Separator />
-                <Button Command="{Binding SaveCklCommand}" Padding="8,4" ToolTip="Save as STIG Viewer 2.x .ckl (XML)">
-                    <TextBlock Text="💾 Save CKL" />
+                <Button Command="{Binding SaveCommand}" Padding="8,4"
+                        ToolTip="Save back to the current file, in its format (Ctrl+S)">
+                    <TextBlock Text="💾 Save" />
                 </Button>
-                <Button Command="{Binding ExportCklbCommand}" Padding="8,4" ToolTip="Export as STIG Viewer 3.x .cklb (JSON)">
-                    <TextBlock Text="⬇ Export CKLB" />
+                <Button Command="{Binding SaveAsCommand}" Padding="8,4"
+                        ToolTip="Save a copy — choose .ckl or .cklb in the dialog">
+                    <TextBlock Text="💾 Save As…" />
                 </Button>
                 <Separator />
                 <Button Command="{Binding ApplyScapCommand}" Padding="8,4"
