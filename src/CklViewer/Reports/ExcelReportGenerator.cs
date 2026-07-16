@@ -15,12 +15,18 @@ public static class ExcelReportGenerator
     private static readonly XLColor CatIiFill = XLColor.FromArgb(237, 125, 49);
     private static readonly XLColor CatIiiFill = XLColor.FromArgb(255, 192, 0);
 
-    public static void WriteReport(IReadOnlyList<ChecklistDocument> documents, string path)
+    // Status colors, matching the in-app status donut.
+    private static readonly XLColor OpenFill = XLColor.FromArgb(0xE7, 0x4C, 0x3C);
+    private static readonly XLColor NotAFindingFill = XLColor.FromArgb(0x27, 0xAE, 0x60);
+    private static readonly XLColor NotApplicableFill = XLColor.FromArgb(0x9A, 0xA7, 0xAD);
+    private static readonly XLColor NotReviewedFill = XLColor.FromArgb(0xF0, 0xB4, 0x00);
+
+    public static void WriteReport(IReadOnlyList<ChecklistDocument> documents, string path, bool colorCodeStatus = true)
     {
         using var workbook = new XLWorkbook();
         BuildSummarySheet(workbook, documents);
         BuildPoamSheet(workbook, documents);
-        BuildDetailsSheet(workbook, documents);
+        BuildDetailsSheet(workbook, documents, colorCodeStatus);
         workbook.SaveAs(path);
     }
 
@@ -162,7 +168,7 @@ public static class ExcelReportGenerator
         FinishTableSheet(sheet, row, headers.Length, wrapColumns: new[] { 1, 4, 16, 17 }, wideColumns: new[] { 1 });
     }
 
-    private static void BuildDetailsSheet(XLWorkbook workbook, IReadOnlyList<ChecklistDocument> documents)
+    private static void BuildDetailsSheet(XLWorkbook workbook, IReadOnlyList<ChecklistDocument> documents, bool colorCodeStatus)
     {
         var sheet = workbook.Worksheets.Add("Vulnerability Details");
         var headers = new[]
@@ -207,7 +213,11 @@ public static class ExcelReportGenerator
                     sheet.Cell(row, 15).Value = Sanitize(vuln.Comments, 2000);
 
                     ApplySeverityFill(sheet.Cell(row, 6), vuln.EffectiveSeverity);
-                    if (vuln.Status == FindingStatus.Open)
+                    if (colorCodeStatus)
+                    {
+                        ApplyStatusFill(sheet.Cell(row, 8), vuln.Status);
+                    }
+                    else if (vuln.Status == FindingStatus.Open)
                     {
                         sheet.Cell(row, 8).Style.Font.SetFontColor(XLColor.Red).Font.SetBold();
                     }
@@ -261,6 +271,19 @@ public static class ExcelReportGenerator
             Severity.High => CatIFill,
             Severity.Low => CatIiiFill,
             _ => CatIiFill
+        };
+        cell.Style.Fill.SetBackgroundColor(fill);
+        cell.Style.Font.SetFontColor(XLColor.White).Font.SetBold();
+    }
+
+    private static void ApplyStatusFill(IXLCell cell, FindingStatus status)
+    {
+        var fill = status switch
+        {
+            FindingStatus.Open => OpenFill,
+            FindingStatus.NotAFinding => NotAFindingFill,
+            FindingStatus.NotApplicable => NotApplicableFill,
+            _ => NotReviewedFill
         };
         cell.Style.Fill.SetBackgroundColor(fill);
         cell.Style.Font.SetFontColor(XLColor.White).Font.SetBold();

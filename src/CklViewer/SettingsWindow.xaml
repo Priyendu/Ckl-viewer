@@ -1,0 +1,23 @@
+<Window x:Class="CklViewer.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Icon="/CklViewer;component/Assets/app.ico">
+    <StackPanel Margin="20">
+        <TextBlock Text="Excel report" FontWeight="Bold" Foreground="#1F4E79" Margin="0,0,0,8" />
+
+        <CheckBox x:Name="ColorStatusCheck"
+                  Content="Color-code status cells to match the status donut" />
+        <TextBlock Margin="24,4,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
+                   Text="Fills the Status column in the Vulnerability Details sheet with the finding's status color — Open (red), Not a Finding (green), Not Applicable (grey), Not Reviewed (amber). When off, only Open findings are marked, in red text." />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+            <Button Content="Cancel" IsCancel="True" Width="84" Padding="0,4" Click="Cancel_Click" />
+            <Button Content="OK" IsDefault="True" Width="84" Padding="0,4" Margin="8,0,0,0" Click="Ok_Click" />
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -8,6 +8,7 @@ using CklViewer.Controls;
 using CklViewer.Models;
 using CklViewer.Parsing;
 using CklViewer.Reports;
+using CklViewer.Settings;
 using CklViewer.Writing;
 using Microsoft.Win32;
 
@@ -60,6 +61,11 @@ public class MainViewModel : INotifyPropertyChanged
         ApplyScapCommand = new RelayCommand(ApplyScapResult, () => Documents.Count > 0);
         ExportReportCommand = new RelayCommand(ExportReport, () => Documents.Count > 0);
     }
+
+    /// <summary>Persisted user settings; edited via the Settings dialog and saved with <see cref="SaveSettings"/>.</summary>
+    public AppSettings Settings { get; } = SettingsStore.Load();
+
+    public void SaveSettings() => SettingsStore.Save(Settings);
 
     public ObservableCollection<ChecklistDocument> Documents { get; } = new();
     public ObservableCollection<FindingRow> Findings { get; }
@@ -535,7 +541,7 @@ public class MainViewModel : INotifyPropertyChanged
 
         if (dialog.ShowDialog() == true)
         {
-            ExcelReportGenerator.WriteReport(Documents.ToList(), dialog.FileName);
+            ExcelReportGenerator.WriteReport(Documents.ToList(), dialog.FileName, Settings.ColorCodeStatusInReport);
             StatusMessage = $"Report for {Documents.Count} checklist(s) written to {Path.GetFileName(dialog.FileName)}.";
         }
     }

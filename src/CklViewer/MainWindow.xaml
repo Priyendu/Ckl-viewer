@@ -78,6 +78,9 @@
                     <TextBlock Text="📊 Excel Report" />
                 </Button>
                 <Separator />
+                <Button Click="Settings_Click" Padding="8,4" ToolTip="Settings">
+                    <TextBlock Text="⚙ Settings" />
+                </Button>
                 <Button Command="Help" Padding="8,4" ToolTip="About Ckl-viewer (F1)">
                     <TextBlock Text="ℹ About" />
                 </Button>

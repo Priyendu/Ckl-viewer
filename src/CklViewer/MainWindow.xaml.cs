@@ -22,6 +22,14 @@ public partial class MainWindow : Window
     private void About_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e) =>
         new AboutWindow { Owner = this }.ShowDialog();
 
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        if (new SettingsWindow(_viewModel.Settings) { Owner = this }.ShowDialog() == true)
+        {
+            _viewModel.SaveSettings();
+        }
+    }
+
     private void Window_DragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
