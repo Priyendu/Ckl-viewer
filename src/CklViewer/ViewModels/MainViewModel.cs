@@ -545,13 +545,26 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        // Make the direction unmistakable: assessment flows FROM the picked file INTO the open checklist.
+        var confirm = System.Windows.MessageBox.Show(
+            "Confirm the merge direction:\n\n" +
+            $"FROM  (prior version):  {Path.GetFileName(dialog.FileName)}\n" +
+            $"INTO  (open checklist):  {AssetLabel(target)}\n\n" +
+            "The OPEN checklist's statuses, finding details, and comments will be updated from the " +
+            "prior one, matched by rule version. If that's backwards, choose No and open the newer " +
+            "checklist first.\n\nContinue?",
+            "Confirm merge direction",
+            System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+        if (confirm != System.Windows.MessageBoxResult.Yes)
+        {
+            StatusMessage = "Merge cancelled.";
+            return;
+        }
+
         try
         {
             var source = ChecklistLoader.Load(dialog.FileName);
-            var outcome = ChecklistMerger.Merge(target, source, Settings.ResetChangedRulesOnMerge);
-
-            UpdateSummary();
-            FindingsView.Refresh();
+            var outcome = MergeFrom(source);
 
             var changedNote = Settings.ResetChangedRulesOnMerge ? "reset to Not Reviewed" : "flagged to re-verify";
             StatusMessage =
@@ -576,6 +589,16 @@ public class MainViewModel : INotifyPropertyChanged
             System.Windows.MessageBox.Show(ex.Message, "Unable to merge checklist",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
+    }
+
+    /// <summary>Merges <paramref name="source"/> into the open checklist and refreshes the view. Separated from the file picker so it can be tested.</summary>
+    internal MergeOutcome MergeFrom(ChecklistDocument source)
+    {
+        var target = CurrentDocument ?? throw new InvalidOperationException("No checklist is open to merge into.");
+        var outcome = ChecklistMerger.Merge(target, source, Settings.ResetChangedRulesOnMerge);
+        UpdateSummary();
+        FindingsView.Refresh();
+        return outcome;
     }
 
     private void ExportReport()
