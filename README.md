@@ -76,9 +76,10 @@ bundled inside or shared with your PC.
 ![Excel report](docs/img/screenshot-report.png)
 
 The report has three tabs: an **Executive Summary** (counts and compliance % per
-system), a **POA&M** (Plan of Action & Milestones rows for everything still open),
-and full **Vulnerability Details** with every rule, ready to filter and share.
-Status cells are color-coded to match the donut (toggle it under **⚙ Settings**).
+system, with a status pie chart), a **POA&M** (Plan of Action & Milestones rows
+for everything still open), and full **Vulnerability Details** with every rule,
+ready to filter and share. Status cells are color-coded to match the donut
+(toggle it under **⚙ Settings**).
 
 ## Using it in three steps
 
