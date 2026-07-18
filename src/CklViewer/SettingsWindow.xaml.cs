@@ -12,12 +12,14 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         _settings = settings;
         ColorStatusCheck.IsChecked = settings.ColorCodeStatusInReport;
+        ResetChangedCheck.IsChecked = settings.ResetChangedRulesOnMerge;
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         // Write the edited values back only on OK, so Cancel leaves settings untouched.
         _settings.ColorCodeStatusInReport = ColorStatusCheck.IsChecked == true;
+        _settings.ResetChangedRulesOnMerge = ResetChangedCheck.IsChecked == true;
         DialogResult = true;
     }
 

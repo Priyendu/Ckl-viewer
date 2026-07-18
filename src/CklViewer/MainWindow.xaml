@@ -72,6 +72,10 @@
                         ToolTip="Apply a SCAP XCCDF result file — statuses are updated by rule version">
                     <TextBlock Text="🛰 Apply SCAP Result" />
                 </Button>
+                <Button Command="{Binding MergeCommand}" Padding="8,4"
+                        ToolTip="Merge a prior-version checklist's assessment into the open one, matched by rule version">
+                    <TextBlock Text="🔀 Merge Prior" />
+                </Button>
                 <Separator />
                 <Button Command="{Binding ExportReportCommand}" Padding="8,4"
                         ToolTip="Generate a Vulnerator-style Excel report (Summary, POA&amp;M, Details)">

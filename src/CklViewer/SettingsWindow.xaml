@@ -15,6 +15,12 @@
         <TextBlock Margin="24,4,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
                    Text="Fills the Status column in the Vulnerability Details sheet with the finding's status color — Open (red), Not a Finding (green), Not Applicable (grey), Not Reviewed (amber). When off, only Open findings are marked, in red text." />
 
+        <TextBlock Text="Merge" FontWeight="Bold" Foreground="#1F4E79" Margin="0,18,0,8" />
+        <CheckBox x:Name="ResetChangedCheck"
+                  Content="Reset changed rules to Not Reviewed when merging" />
+        <TextBlock Margin="24,4,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
+                   Text="When merging a prior assessment into a new STIG version, if a rule's check or fix text changed, reset it to Not Reviewed instead of carrying the old status forward. When off (default), the status is kept and the finding is flagged to re-verify." />
+
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
             <Button Content="Cancel" IsCancel="True" Width="84" Padding="0,4" Click="Cancel_Click" />
             <Button Content="OK" IsDefault="True" Width="84" Padding="0,4" Margin="8,0,0,0" Click="Ok_Click" />

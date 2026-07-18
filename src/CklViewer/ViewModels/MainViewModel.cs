@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using System.Windows.Input;
 using CklViewer.Controls;
+using CklViewer.Merging;
 using CklViewer.Models;
 using CklViewer.Parsing;
 using CklViewer.Reports;
@@ -59,6 +60,7 @@ public class MainViewModel : INotifyPropertyChanged
         SaveCommand = new RelayCommand(Save, () => CurrentDocument is not null);
         SaveAsCommand = new RelayCommand(SaveAs, () => CurrentDocument is not null);
         ApplyScapCommand = new RelayCommand(ApplyScapResult, () => Documents.Count > 0);
+        MergeCommand = new RelayCommand(MergePriorAssessment, () => CurrentDocument is not null);
         ExportReportCommand = new RelayCommand(ExportReport, () => Documents.Count > 0);
     }
 
@@ -100,6 +102,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand SaveCommand { get; }
     public ICommand SaveAsCommand { get; }
     public ICommand ApplyScapCommand { get; }
+    public ICommand MergeCommand { get; }
     public ICommand ExportReportCommand { get; }
 
     /// <summary>The checklist that Save/Export act on: the one owning the selected finding, else the first loaded.</summary>
@@ -519,6 +522,58 @@ public class MainViewModel : INotifyPropertyChanged
         {
             StatusMessage = $"Failed to apply SCAP result: {ex.Message}";
             System.Windows.MessageBox.Show(ex.Message, "Unable to apply SCAP result",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private void MergePriorAssessment()
+    {
+        var target = CurrentDocument;
+        if (target is null)
+        {
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Title = "Merge prior assessment — choose the previous-version checklist",
+            Filter = "STIG checklists (*.ckl;*.cklb)|*.ckl;*.cklb|All files (*.*)|*.*"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var source = ChecklistLoader.Load(dialog.FileName);
+            var outcome = ChecklistMerger.Merge(target, source, Settings.ResetChangedRulesOnMerge);
+
+            UpdateSummary();
+            FindingsView.Refresh();
+
+            var changedNote = Settings.ResetChangedRulesOnMerge ? "reset to Not Reviewed" : "flagged to re-verify";
+            StatusMessage =
+                $"Merged {Path.GetFileName(dialog.FileName)}: {outcome.Carried} carried " +
+                $"({outcome.Changed} changed, {changedNote}), {outcome.NewRules} new, {outcome.Removed} removed.";
+
+            var body =
+                $"Merged prior assessment from {Path.GetFileName(dialog.FileName)}:\n\n" +
+                $"• Carried over: {outcome.Carried}  ({outcome.Unchanged} unchanged, {outcome.Changed} changed — {changedNote})\n" +
+                $"• New rules needing review: {outcome.NewRules}\n" +
+                $"• Removed (in the old version, not the new): {outcome.Removed}\n\n" +
+                (outcome.Carried == 0
+                    ? "No rules matched — is this the same STIG as the open checklist?\n\n"
+                    : "Review the changed and new findings, then Save.");
+
+            System.Windows.MessageBox.Show(body, "Merge complete",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Merge failed: {ex.Message}";
+            System.Windows.MessageBox.Show(ex.Message, "Unable to merge checklist",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }

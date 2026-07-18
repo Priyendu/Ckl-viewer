@@ -8,4 +8,11 @@ public sealed class AppSettings
     /// is filled with the finding's status color (matching the in-app status donut).
     /// </summary>
     public bool ColorCodeStatusInReport { get; set; } = true;
+
+    /// <summary>
+    /// When true, merging a prior assessment resets any rule whose check/fix text changed
+    /// between versions to Not Reviewed. When false (default), the prior status is carried
+    /// forward and the finding is flagged for re-verification instead.
+    /// </summary>
+    public bool ResetChangedRulesOnMerge { get; set; }
 }

@@ -64,6 +64,11 @@ bundled inside or shared with your PC.
   as you go.
 - **Applies your SCAP scan** — drop an XCCDF scan-result file and it updates
   every matching finding automatically.
+- **Merges a prior assessment into a new STIG release** — when a manual STIG
+  updates, open the new version and **Merge Prior** to carry forward your old
+  statuses, finding details, and comments (matched by rule version). New rules
+  stay Not Reviewed; rules whose text changed are flagged to re-verify (or reset
+  to Not Reviewed — your choice, under ⚙ Settings).
 - **Saves back out** — **Save** (Ctrl+S) writes back to the file you opened;
   **Save As…** lets you choose `.ckl` or `.cklb`, ready to open in DISA STIG Viewer.
 - **Builds Excel reports in one click** — a polished, Vulnerator-style workbook.
