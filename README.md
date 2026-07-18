@@ -81,6 +81,10 @@ for everything still open), and full **Vulnerability Details** with every rule,
 ready to filter and share. Status cells are color-coded to match the donut
 (toggle it under **⚙ Settings**).
 
+<div align="center">
+<img src="docs/img/report-pie.png" alt="Executive Summary status pie chart" width="440" />
+</div>
+
 ## Using it in three steps
 
 1. **Open** your checklist(s) — drag `.ckl` / `.cklb` files onto the window, or
