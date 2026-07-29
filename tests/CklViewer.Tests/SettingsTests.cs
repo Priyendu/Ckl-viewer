@@ -57,9 +57,10 @@ public class SettingsTests
 
             using var workbook = new XLWorkbook(path);
             var details = workbook.Worksheet("Vulnerability Details");
-            // Not a Finding row's Status cell should be filled green.
+            // Colouring is done with conditional formatting (so Excel edits recolour themselves),
+            // not a fill baked into each cell.
             var green = XLColor.FromArgb(0x27, 0xAE, 0x60);
-            Assert.Equal(green, details.Row(3).Cell(8).Style.Fill.BackgroundColor);
+            Assert.Contains(details.ConditionalFormats, f => f.Style.Fill.BackgroundColor.Equals(green));
         }
         finally
         {
@@ -78,8 +79,10 @@ public class SettingsTests
 
             using var workbook = new XLWorkbook(path);
             var details = workbook.Worksheet("Vulnerability Details");
-            // With coloring off, the Not a Finding row's Status cell is left unfilled.
+            // With colouring off, no status rule paints a background (Open is emphasised in red text only).
             Assert.Equal(XLFillPatternValues.None, details.Row(3).Cell(8).Style.Fill.PatternType);
+            var green = XLColor.FromArgb(0x27, 0xAE, 0x60);
+            Assert.DoesNotContain(details.ConditionalFormats, f => f.Style.Fill.BackgroundColor.Equals(green));
         }
         finally
         {

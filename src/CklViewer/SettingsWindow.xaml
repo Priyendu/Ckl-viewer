@@ -15,6 +15,11 @@
         <TextBlock Margin="24,4,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
                    Text="Fills the Status column in the Vulnerability Details sheet with the finding's status color — Open (red), Not a Finding (green), Not Applicable (grey), Not Reviewed (amber). When off, only Open findings are marked, in red text." />
 
+        <CheckBox x:Name="InternalNotesCheck" Margin="0,12,0,0"
+                  Content="Include an &quot;Internal Notes&quot; column" />
+        <TextBlock Margin="24,4,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
+                   Text="Adds a trailing column to the Vulnerability Details sheet for team-only notes. These are never written to .ckl or .cklb files, but they are read back when you import the report." />
+
         <TextBlock Text="Merge" FontWeight="Bold" Foreground="#1F4E79" Margin="0,18,0,8" />
         <CheckBox x:Name="ResetChangedCheck"
                   Content="Reset changed rules to Not Reviewed when merging" />

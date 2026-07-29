@@ -647,7 +647,8 @@ public class MainViewModel : INotifyPropertyChanged
 
         if (dialog.ShowDialog() == true)
         {
-            ExcelReportGenerator.WriteReport(Documents.ToList(), dialog.FileName, Settings.ColorCodeStatusInReport);
+            ExcelReportGenerator.WriteReport(Documents.ToList(), dialog.FileName,
+                Settings.ColorCodeStatusInReport, Settings.IncludeInternalNotesColumn);
             StatusMessage = $"Report for {Documents.Count} checklist(s) written to {Path.GetFileName(dialog.FileName)}.";
         }
     }

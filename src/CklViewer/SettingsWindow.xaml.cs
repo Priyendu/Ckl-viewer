@@ -12,6 +12,7 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         _settings = settings;
         ColorStatusCheck.IsChecked = settings.ColorCodeStatusInReport;
+        InternalNotesCheck.IsChecked = settings.IncludeInternalNotesColumn;
         ResetChangedCheck.IsChecked = settings.ResetChangedRulesOnMerge;
     }
 
@@ -19,6 +20,7 @@ public partial class SettingsWindow : Window
     {
         // Write the edited values back only on OK, so Cancel leaves settings untouched.
         _settings.ColorCodeStatusInReport = ColorStatusCheck.IsChecked == true;
+        _settings.IncludeInternalNotesColumn = InternalNotesCheck.IsChecked == true;
         _settings.ResetChangedRulesOnMerge = ResetChangedCheck.IsChecked == true;
         DialogResult = true;
     }

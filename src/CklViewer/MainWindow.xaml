@@ -294,6 +294,13 @@
                             <TextBlock Text="Comments" Margin="0,8,0,0" />
                             <TextBox Text="{Binding Vulnerability.Comments, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource EditTextBox}" MinHeight="60" />
+                            <TextBlock Margin="0,8,0,0">
+                                <Run Text="Internal notes" />
+                                <Run Text="(not saved to .ckl / .cklb)" Foreground="Gray" FontSize="10" />
+                            </TextBlock>
+                            <TextBox Text="{Binding Vulnerability.InternalNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource EditTextBox}" MinHeight="60"
+                                     ToolTip="Team-only notes. Kept in the Excel report, never written to .ckl or .cklb." />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
