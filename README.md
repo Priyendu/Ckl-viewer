@@ -6,8 +6,9 @@
 
 **Open, edit, and report on DISA STIG checklists — without the browser-tab circus.**
 
-A free Windows app that opens both `.ckl` and `.cklb` STIG checklists and turns
-them into clean Excel reports, the way Vulnerator used to.
+A free Windows app that opens both `.ckl` and `.cklb` STIG checklists, turns
+them into clean Excel reports the way Vulnerator used to — and reads those
+reports back in, so edits made in the spreadsheet become a checklist again.
 
 ### [⬇ Download the latest version](https://github.com/Priyendu/Ckl-viewer/releases/latest)
 
@@ -69,13 +70,13 @@ bundled inside or shared with your PC.
   statuses, finding details, and comments (matched by rule version). New rules
   stay Not Reviewed; rules whose text changed are flagged to re-verify (or reset
   to Not Reviewed — your choice, under ⚙ Settings).
-- **Works the other way too** — hand the Excel report to whoever does the
-  remediation, let them update statuses and comments in the spreadsheet, then
-  **open the `.xlsx` right back in Ckl-viewer** and save it as `.ckl` / `.cklb`.
-  One checklist per asset in the report.
 - **Saves back out** — **Save** (Ctrl+S) writes back to the file you opened;
   **Save As…** lets you choose `.ckl` or `.cklb`, ready to open in DISA STIG Viewer.
 - **Builds Excel reports in one click** — a polished, Vulnerator-style workbook.
+- **Reads those reports back in** — hand the `.xlsx` to whoever does the
+  remediation, let them update statuses and comments in the spreadsheet, then
+  open it right back in Ckl-viewer and save it as `.ckl` / `.cklb`. One checklist
+  per asset in the report, and nothing is lost on the way out or back.
 
 ![Excel report](docs/img/screenshot-report.png)
 
