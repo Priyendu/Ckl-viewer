@@ -182,24 +182,35 @@ public class MainViewModel : INotifyPropertyChanged
     public void LoadChecklists(IEnumerable<string> paths)
     {
         var loaded = 0;
+        var excelImports = 0;
+        var truncatedFields = 0;
         var errors = new List<string>();
 
         foreach (var path in paths)
         {
             try
             {
-                var document = ChecklistLoader.Load(path);
-                Documents.Add(document);
-                foreach (var stig in document.Stigs)
+                var documents = ChecklistLoader.LoadAll(path);
+                if (ChecklistLoader.IsExcel(path))
                 {
-                    foreach (var vuln in stig.Vulnerabilities)
-                    {
-                        vuln.PropertyChanged += OnVulnerabilityChanged;
-                        Findings.Add(new FindingRow(vuln, stig, document));
-                    }
+                    excelImports++;
+                    truncatedFields += documents.Sum(ExcelChecklistImporter.CountTruncatedFields);
                 }
 
-                loaded++;
+                foreach (var document in documents)
+                {
+                    Documents.Add(document);
+                    foreach (var stig in document.Stigs)
+                    {
+                        foreach (var vuln in stig.Vulnerabilities)
+                        {
+                            vuln.PropertyChanged += OnVulnerabilityChanged;
+                            Findings.Add(new FindingRow(vuln, stig, document));
+                        }
+                    }
+
+                    loaded++;
+                }
             }
             catch (Exception ex)
             {
@@ -215,9 +226,24 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CurrentDocument));
         OnPropertyChanged(nameof(Asset));
 
+        var importNote = excelImports > 0
+            ? $" Imported from {excelImports} Excel report(s) — use Save As to write .ckl or .cklb."
+            : string.Empty;
+
         StatusMessage = errors.Count == 0
-            ? $"Loaded {loaded} checklist(s): {Documents.Count} total, {Findings.Count} finding(s)."
+            ? $"Loaded {loaded} checklist(s): {Documents.Count} total, {Findings.Count} finding(s).{importNote}"
             : $"Loaded {loaded} checklist(s); {errors.Count} failed. {string.Join(" | ", errors)}";
+
+        if (truncatedFields > 0)
+        {
+            System.Windows.MessageBox.Show(
+                $"{truncatedFields} field(s) in this report were shortened when it was generated, so the imported " +
+                "checklist has truncated text in those places (they end with \"…\").\n\n" +
+                "Statuses, finding details, and comments are still usable, but if you need the full rule text, " +
+                "merge this import into a checklist created from the STIG benchmark instead.",
+                "Imported with truncated text",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
 
         if (errors.Count > 0)
         {
@@ -360,8 +386,10 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Open STIG checklists (multi-select supported)",
-            Filter = "STIG checklists (*.ckl;*.cklb)|*.ckl;*.cklb|All files (*.*)|*.*",
+            Title = "Open STIG checklists or an Excel report (multi-select supported)",
+            Filter = "Checklists and reports (*.ckl;*.cklb;*.xlsx)|*.ckl;*.cklb;*.xlsx|" +
+                     "STIG checklists (*.ckl;*.cklb)|*.ckl;*.cklb|" +
+                     "Excel report (*.xlsx)|*.xlsx|All files (*.*)|*.*",
             Multiselect = true
         };
 
@@ -536,8 +564,8 @@ public class MainViewModel : INotifyPropertyChanged
 
         var dialog = new OpenFileDialog
         {
-            Title = "Merge prior assessment — choose the previous-version checklist",
-            Filter = "STIG checklists (*.ckl;*.cklb)|*.ckl;*.cklb|All files (*.*)|*.*"
+            Title = "Merge prior assessment — choose the previous-version checklist or Excel report",
+            Filter = "Checklists and reports (*.ckl;*.cklb;*.xlsx)|*.ckl;*.cklb;*.xlsx|All files (*.*)|*.*"
         };
 
         if (dialog.ShowDialog() != true)

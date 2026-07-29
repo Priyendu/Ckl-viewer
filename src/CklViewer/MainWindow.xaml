@@ -48,7 +48,7 @@
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
                 <Button Command="{Binding OpenCommand}" Padding="8,4"
-                        ToolTip="Open one or more .ckl / .cklb checklists (multi-select supported)">
+                        ToolTip="Open .ckl / .cklb checklists, or an Excel report to turn it back into a checklist (multi-select supported)">
                     <TextBlock Text="📂 Open" />
                 </Button>
                 <Button Command="{Binding NewFromStigCommand}" Padding="8,4"

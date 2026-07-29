@@ -69,6 +69,10 @@ bundled inside or shared with your PC.
   statuses, finding details, and comments (matched by rule version). New rules
   stay Not Reviewed; rules whose text changed are flagged to re-verify (or reset
   to Not Reviewed — your choice, under ⚙ Settings).
+- **Works the other way too** — hand the Excel report to whoever does the
+  remediation, let them update statuses and comments in the spreadsheet, then
+  **open the `.xlsx` right back in Ckl-viewer** and save it as `.ckl` / `.cklb`.
+  One checklist per asset in the report.
 - **Saves back out** — **Save** (Ctrl+S) writes back to the file you opened;
   **Save As…** lets you choose `.ckl` or `.cklb`, ready to open in DISA STIG Viewer.
 - **Builds Excel reports in one click** — a polished, Vulnerator-style workbook.
@@ -87,8 +91,9 @@ ready to filter and share. Status cells are color-coded to match the donut
 
 ## Using it in three steps
 
-1. **Open** your checklist(s) — drag `.ckl` / `.cklb` files onto the window, or
-   click **New from STIG** to start a fresh one from a benchmark.
+1. **Open** your checklist(s) — drag `.ckl`, `.cklb`, or a previously exported
+   `.xlsx` report onto the window, or click **New from STIG** to start a fresh
+   one from a benchmark.
 2. **Review or edit** — click any finding to read the rule, check, and fix text;
    change its status or add notes on the right.
 3. **Report** — click **📊 Excel Report** and pick where to save. Done.
