@@ -23,13 +23,35 @@ public sealed class DonutChart : FrameworkElement
     private double _outerRadius;
     private double _total;
 
+    private readonly Popup _popup;
+    private readonly TextBlock _popupText;
+
     public DonutChart()
     {
-        // Show the slice tooltip promptly and follow the pointer, like a chart should.
-        ToolTipService.SetInitialShowDelay(this, 150);
-        ToolTipService.SetBetweenShowDelay(this, 0);
-        ToolTipService.SetShowDuration(this, 30000);
-        ToolTipService.SetPlacement(this, PlacementMode.Mouse);
+        // A popup we drive ourselves, rather than ToolTipService: the service decides when to
+        // show based on tracking that a dynamically-assigned tooltip can easily miss, which
+        // left slices silent. Opening a popup explicitly is deterministic.
+        _popupText = new TextBlock
+        {
+            Foreground = Brushes.White,
+            FontSize = 12,
+            Margin = new Thickness(8, 4, 8, 5)
+        };
+
+        _popup = new Popup
+        {
+            AllowsTransparency = true,
+            Placement = PlacementMode.Relative,
+            PlacementTarget = this,
+            StaysOpen = true,
+            IsHitTestVisible = false, // never steal the mouse from the chart underneath
+            Child = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(0xF0, 0x20, 0x24, 0x28)),
+                CornerRadius = new CornerRadius(3),
+                Child = _popupText
+            }
+        };
     }
 
     public static readonly DependencyProperty SegmentsProperty = DependencyProperty.Register(
@@ -148,18 +170,34 @@ public sealed class DonutChart : FrameworkElement
     internal void UpdateHover(Point position)
     {
         var segment = HitTestSegment(position);
-        if (ReferenceEquals(segment, _hovered))
+        if (segment is null)
         {
-            return; // same slice as last time; nothing to change
+            HideTooltip();
+            return;
         }
 
-        // Swapping the ToolTip closes the previous one and lets the next slice's text show.
-        _hovered = segment;
-        ToolTip = segment is null ? null : DescribeSlice(segment);
+        if (!ReferenceEquals(segment, _hovered))
+        {
+            _hovered = segment;
+            _popupText.Text = DescribeSlice(segment);
+        }
+
+        // Track the pointer, offset so the popup never sits under the cursor.
+        _popup.HorizontalOffset = position.X + 14;
+        _popup.VerticalOffset = position.Y + 18;
+        _popup.IsOpen = true;
     }
 
-    /// <summary>The text currently attached as the tooltip; exposed for tests.</summary>
-    internal string? TooltipContent => ToolTip as string;
+    internal void HideTooltip()
+    {
+        _hovered = null;
+        _popup.IsOpen = false;
+    }
+
+    /// <summary>Tooltip state, exposed so tests can assert what the user would actually see.</summary>
+    internal bool IsTooltipOpen => _popup.IsOpen;
+
+    internal string? TooltipContent => _popupText.Text;
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
@@ -170,8 +208,7 @@ public sealed class DonutChart : FrameworkElement
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
-        _hovered = null;
-        ToolTip = null;
+        HideTooltip();
     }
 
     private static Geometry BuildSlice(Point c, double outer, double inner, double startAngle, double sweep)

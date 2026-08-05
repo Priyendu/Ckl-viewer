@@ -111,11 +111,18 @@ public class DonutHoverTests
 
                 chart.UpdateHover(new Point(100 + 75, 100)); // 3 o'clock -> the Open slice
                 overSlice = chart.TooltipContent;
-                tooltipObject = chart.ToolTip;
+                tooltipObject = chart.IsTooltipOpen ? "open" : null;   // must actually be shown
+                Assert.True(chart.IsTooltipOpen, "Tooltip should be visible over a slice.");
 
-                // Moving into the hole detaches the tooltip again.
+                // Moving into the hole hides it again.
                 chart.UpdateHover(new Point(100, 100));
-                Assert.Null(chart.TooltipContent);
+                Assert.False(chart.IsTooltipOpen, "Tooltip should be hidden over the hole.");
+
+                // Leaving the control hides it too.
+                chart.UpdateHover(new Point(100 + 75, 100));
+                Assert.True(chart.IsTooltipOpen);
+                chart.HideTooltip();
+                Assert.False(chart.IsTooltipOpen);
             }
             catch (Exception ex)
             {
