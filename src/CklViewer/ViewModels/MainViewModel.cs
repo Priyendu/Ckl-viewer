@@ -47,6 +47,7 @@ public class MainViewModel : INotifyPropertyChanged
     private string _statusMessage = "Open one or more .ckl / .cklb checklists (File → Open supports multi-select, or drop them on the window).";
     private string _summaryText = string.Empty;
     private IReadOnlyList<ChartSegment> _statusSegments = Array.Empty<ChartSegment>();
+    private int _visibleCount;
 
     public MainViewModel()
     {
@@ -133,31 +134,31 @@ public class MainViewModel : INotifyPropertyChanged
     public string SearchText
     {
         get => _searchText;
-        set { _searchText = value; OnPropertyChanged(); FindingsView.Refresh(); }
+        set { _searchText = value; OnPropertyChanged(); ApplyFilters(); }
     }
 
     public string StatusFilter
     {
         get => _statusFilter;
-        set { _statusFilter = value; OnPropertyChanged(); FindingsView.Refresh(); }
+        set { _statusFilter = value; OnPropertyChanged(); ApplyFilters(); }
     }
 
     public string SeverityFilter
     {
         get => _severityFilter;
-        set { _severityFilter = value; OnPropertyChanged(); FindingsView.Refresh(); }
+        set { _severityFilter = value; OnPropertyChanged(); ApplyFilters(); }
     }
 
     public string StigFilter
     {
         get => _stigFilter;
-        set { _stigFilter = value; OnPropertyChanged(); FindingsView.Refresh(); }
+        set { _stigFilter = value; OnPropertyChanged(); ApplyFilters(); }
     }
 
     public string AssetFilter
     {
         get => _assetFilter;
-        set { _assetFilter = value; OnPropertyChanged(); FindingsView.Refresh(); }
+        set { _assetFilter = value; OnPropertyChanged(); ApplyFilters(); }
     }
 
     public string StatusMessage
@@ -176,6 +177,32 @@ public class MainViewModel : INotifyPropertyChanged
     {
         get => _statusSegments;
         private set { _statusSegments = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>True when any filter or search term is narrowing the grid.</summary>
+    public bool HasActiveFilter =>
+        StatusFilter != AllFilter || SeverityFilter != AllFilter ||
+        StigFilter != AllFilter || AssetFilter != AllFilter ||
+        !string.IsNullOrWhiteSpace(SearchText);
+
+    /// <summary>Number of findings the current filter leaves visible.</summary>
+    public int VisibleCount => _visibleCount;
+
+    /// <summary>Excel-style row count for the status bar.</summary>
+    public string VisibleCountText => Findings.Count == 0
+        ? string.Empty
+        : HasActiveFilter
+            ? $"Showing {_visibleCount:N0} of {Findings.Count:N0} findings"
+            : $"{Findings.Count:N0} findings";
+
+    /// <summary>Header for the breakdown panel, calling out when it reflects a filter.</summary>
+    public string SummaryHeader => HasActiveFilter ? "Status breakdown (filtered)" : "Status breakdown";
+
+    /// <summary>Re-applies the filter to the grid and recomputes the counts and chart from what's visible.</summary>
+    private void ApplyFilters()
+    {
+        FindingsView.Refresh();
+        UpdateSummary();
     }
 
     /// <summary>Loads one or more checklist files, appending them to the current session.</summary>
@@ -355,6 +382,11 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void UpdateSummary()
     {
+        // Count what the user can actually see, so the chart and totals track the filter.
+        var vulns = FindingsView.Cast<FindingRow>().Select(f => f.Vulnerability).ToList();
+        _visibleCount = vulns.Count;
+        NotifyCountsChanged();
+
         if (Documents.Count == 0)
         {
             SummaryText = string.Empty;
@@ -362,7 +394,6 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        var vulns = Findings.Select(f => f.Vulnerability).ToList();
         var open = vulns.Count(v => v.Status == FindingStatus.Open);
         var catI = vulns.Count(v => v.Status == FindingStatus.Open && v.EffectiveSeverity == Severity.High);
         var catIi = vulns.Count(v => v.Status == FindingStatus.Open && v.EffectiveSeverity == Severity.Medium);
@@ -373,13 +404,25 @@ public class MainViewModel : INotifyPropertyChanged
 
         StatusSegments = ChartSegment.StatusBreakdown(open, naf, na, nr);
 
+        var totalLine = HasActiveFilter
+            ? $"Shown: {vulns.Count} of {Findings.Count}\n"
+            : $"Total: {vulns.Count}\n";
+
         SummaryText =
             $"Checklists: {Documents.Count}\n" +
-            $"Total: {vulns.Count}\n" +
+            totalLine +
             $"Open: {open}  (CAT I: {catI} · CAT II: {catIi} · CAT III: {catIii})\n" +
             $"Not a Finding: {naf}\n" +
             $"Not Applicable: {na}\n" +
             $"Not Reviewed: {nr}";
+    }
+
+    private void NotifyCountsChanged()
+    {
+        OnPropertyChanged(nameof(VisibleCount));
+        OnPropertyChanged(nameof(VisibleCountText));
+        OnPropertyChanged(nameof(HasActiveFilter));
+        OnPropertyChanged(nameof(SummaryHeader));
     }
 
     private void OpenChecklists()
@@ -541,8 +584,7 @@ public class MainViewModel : INotifyPropertyChanged
                 }
             }
 
-            UpdateSummary();
-            FindingsView.Refresh();
+            ApplyFilters();
             StatusMessage =
                 $"SCAP results applied across {Documents.Count} checklist(s): {matched} match(es), {updated} status(es) updated.";
         }
@@ -624,8 +666,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var target = CurrentDocument ?? throw new InvalidOperationException("No checklist is open to merge into.");
         var outcome = ChecklistMerger.Merge(target, source, Settings.ResetChangedRulesOnMerge);
-        UpdateSummary();
-        FindingsView.Refresh();
+        ApplyFilters();
         return outcome;
     }
 

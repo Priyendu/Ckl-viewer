@@ -14,6 +14,7 @@
     <Window.Resources>
         <conv:StatusDisplayConverter x:Key="StatusDisplay" />
         <conv:SeverityDisplayConverter x:Key="SeverityDisplay" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <Style x:Key="SectionHeader" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="Bold" />
@@ -92,6 +93,10 @@
         </ToolBarTray>
 
         <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem DockPanel.Dock="Right" Margin="0,0,8,0">
+                <TextBlock Text="{Binding VisibleCountText}" FontWeight="SemiBold"
+                           ToolTip="Findings currently visible, after filters and search" />
+            </StatusBarItem>
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusMessage}" />
             </StatusBarItem>
@@ -133,7 +138,12 @@
                     <TextBox Text="{Binding Asset.TargetComment, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource EditTextBox}" MinHeight="48" />
 
-                    <TextBlock Text="Status breakdown" Style="{StaticResource SectionHeader}" />
+                    <TextBlock Text="{Binding SummaryHeader}" Style="{StaticResource SectionHeader}" />
+                    <Border Background="#FFF4D6" BorderBrush="#E8C46A" BorderThickness="1" CornerRadius="3"
+                            Padding="6,3" Margin="0,0,0,4"
+                            Visibility="{Binding HasActiveFilter, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{Binding VisibleCountText}" FontSize="11" TextWrapping="Wrap" />
+                    </Border>
                     <ctrl:DonutChart Segments="{Binding StatusSegments}" Height="150" Margin="0,4,0,6" />
                     <ItemsControl ItemsSource="{Binding StatusSegments}" Margin="4,0,0,0">
                         <ItemsControl.ItemTemplate>

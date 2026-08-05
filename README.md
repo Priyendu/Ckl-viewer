@@ -59,7 +59,9 @@ bundled inside or shared with your PC.
   Not Applicable, Not Reviewed) and severity (CAT I / II / III). Search and
   filter by status, severity, STIG, or asset.
 - **Status donut chart** — a live pie of the finding statuses across everything
-  you've loaded, updating as you assess.
+  you've loaded, updating as you assess. Apply a filter and it follows suit,
+  labelled "(filtered)" so you always know what you're looking at, with a
+  "Showing 7 of 120 findings" count in the status bar.
 - **Lets you edit** — set a finding's status, type finding details and comments,
   apply a severity override, and update host information. Running totals update
   as you go.
