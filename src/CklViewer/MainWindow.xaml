@@ -57,7 +57,7 @@
                     <TextBlock Text="🆕 New from STIG" />
                 </Button>
                 <Button Command="{Binding ClearCommand}" Padding="8,4" ToolTip="Close all loaded checklists">
-                    <TextBlock Text="✖ Clear" />
+                    <TextBlock Text="✖ Close All" />
                 </Button>
                 <Separator />
                 <Button Command="{Binding SaveCommand}" Padding="8,4"
@@ -192,6 +192,11 @@
                     <ComboBox Width="240" ItemsSource="{Binding StigFilters}" SelectedItem="{Binding StigFilter}" />
                     <TextBlock Text="Asset:" VerticalAlignment="Center" Margin="12,0,4,0" />
                     <ComboBox Width="150" ItemsSource="{Binding AssetFilters}" SelectedItem="{Binding AssetFilter}" />
+                    <Button Command="{Binding ClearFiltersCommand}" Margin="12,0,0,0" Padding="8,2"
+                            VerticalAlignment="Center"
+                            ToolTip="Clear all filters and the search box (enabled only while a filter is active)">
+                        <TextBlock Text="🚫 Clear All Filters" />
+                    </Button>
                 </WrapPanel>
 
                 <!-- Findings grid -->

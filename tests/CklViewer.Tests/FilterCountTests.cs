@@ -169,6 +169,46 @@ public class FilterCountTests
     }
 
     [Fact]
+    public void ClearFiltersResetsEveryFilterAtOnce()
+    {
+        OnStaThread(() =>
+        {
+            var path = WriteSample();
+            try
+            {
+                var vm = new MainViewModel();
+                vm.LoadChecklists(new[] { path });
+
+                // Nothing to clear yet.
+                Assert.False(vm.ClearFiltersCommand.CanExecute(null));
+
+                vm.StatusFilter = "Open";
+                vm.SeverityFilter = "CAT II";
+                vm.SearchText = "WN10";
+                Assert.True(vm.ClearFiltersCommand.CanExecute(null));
+
+                vm.ClearFiltersCommand.Execute(null);
+
+                Assert.Equal(MainViewModel.AllFilter, vm.StatusFilter);
+                Assert.Equal(MainViewModel.AllFilter, vm.SeverityFilter);
+                Assert.Equal(MainViewModel.AllFilter, vm.StigFilter);
+                Assert.Equal(MainViewModel.AllFilter, vm.AssetFilter);
+                Assert.Equal(string.Empty, vm.SearchText);
+
+                Assert.False(vm.HasActiveFilter);
+                Assert.False(vm.ClearFiltersCommand.CanExecute(null));
+                Assert.Equal(3, vm.VisibleCount);
+                Assert.Equal("3 findings", vm.VisibleCountText);
+                Assert.Equal("Status breakdown", vm.SummaryHeader);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
+    }
+
+    [Fact]
     public void EmptySessionShowsNoCount()
     {
         OnStaThread(() =>

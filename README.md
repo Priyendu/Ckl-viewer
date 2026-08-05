@@ -57,7 +57,9 @@ bundled inside or shared with your PC.
   button. Open several at once and it merges them into one view.
 - **Shows findings at a glance** — color-coded statuses (Open, Not a Finding,
   Not Applicable, Not Reviewed) and severity (CAT I / II / III). Search and
-  filter by status, severity, STIG, or asset.
+  filter by status, severity, STIG, or asset, and reset the lot with
+  **Clear All Filters** (greyed out until something is actually filtered, just
+  like Excel).
 - **Status donut chart** — a live pie of the finding statuses across everything
   you've loaded, updating as you assess. Apply a filter and it follows suit,
   labelled "(filtered)" so you always know what you're looking at, with a

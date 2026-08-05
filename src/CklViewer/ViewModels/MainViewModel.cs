@@ -58,6 +58,7 @@ public class MainViewModel : INotifyPropertyChanged
         OpenCommand = new RelayCommand(OpenChecklists);
         NewFromStigCommand = new RelayCommand(NewFromStig);
         ClearCommand = new RelayCommand(ClearChecklists, () => Documents.Count > 0);
+        ClearFiltersCommand = new RelayCommand(ClearFilters, () => HasActiveFilter);
         SaveCommand = new RelayCommand(Save, () => CurrentDocument is not null);
         SaveAsCommand = new RelayCommand(SaveAs, () => CurrentDocument is not null);
         ApplyScapCommand = new RelayCommand(ApplyScapResult, () => Documents.Count > 0);
@@ -100,6 +101,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand OpenCommand { get; }
     public ICommand NewFromStigCommand { get; }
     public ICommand ClearCommand { get; }
+    public ICommand ClearFiltersCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand SaveAsCommand { get; }
     public ICommand ApplyScapCommand { get; }
@@ -197,6 +199,33 @@ public class MainViewModel : INotifyPropertyChanged
 
     /// <summary>Header for the breakdown panel, calling out when it reflects a filter.</summary>
     public string SummaryHeader => HasActiveFilter ? "Status breakdown (filtered)" : "Status breakdown";
+
+    /// <summary>
+    /// Resets every filter and the search box in one go, refreshing the grid once
+    /// rather than after each individual reset.
+    /// </summary>
+    internal void ClearFilters()
+    {
+        if (!HasActiveFilter)
+        {
+            return;
+        }
+
+        _searchText = string.Empty;
+        _statusFilter = AllFilter;
+        _severityFilter = AllFilter;
+        _stigFilter = AllFilter;
+        _assetFilter = AllFilter;
+
+        OnPropertyChanged(nameof(SearchText));
+        OnPropertyChanged(nameof(StatusFilter));
+        OnPropertyChanged(nameof(SeverityFilter));
+        OnPropertyChanged(nameof(StigFilter));
+        OnPropertyChanged(nameof(AssetFilter));
+
+        ApplyFilters();
+        StatusMessage = $"Filters cleared — showing all {Findings.Count:N0} finding(s).";
+    }
 
     /// <summary>Re-applies the filter to the grid and recomputes the counts and chart from what's visible.</summary>
     private void ApplyFilters()
