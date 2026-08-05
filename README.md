@@ -79,14 +79,22 @@ bundled inside or shared with your PC.
   remediation, let them update statuses and comments in the spreadsheet, then
   open it right back in Ckl-viewer and save it as `.ckl` / `.cklb`. One checklist
   per asset in the report, and nothing is lost on the way out or back.
+- **Keeps team-only notes out of the checklist** — an optional **Internal Notes**
+  column holds working notes (waivers, ticket numbers, who to chase). They live
+  in the Excel report and survive the round trip, but are **never** written to
+  `.ckl` / `.cklb`, so they don't travel with the file you hand over.
 
 ![Excel report](docs/img/screenshot-report.png)
 
 The report has three tabs: an **Executive Summary** (counts and compliance % per
 system, with a status pie chart), a **POA&M** (Plan of Action & Milestones rows
 for everything still open), and full **Vulnerability Details** with every rule,
-ready to filter and share. Status cells are color-coded to match the donut
-(toggle it under **⚙ Settings**).
+ready to filter and share.
+
+Status and severity cells are color-coded to match the donut — and because the
+colors are conditional formatting rules rather than fixed fills, **they update
+themselves when you change a value in Excel**. Change a status to "Not a
+Finding" and the cell turns green on the spot.
 
 <div align="center">
 <img src="docs/img/report-pie.png" alt="Executive Summary status pie chart" width="440" />
@@ -100,6 +108,17 @@ ready to filter and share. Status cells are color-coded to match the donut
 2. **Review or edit** — click any finding to read the rule, check, and fix text;
    change its status or add notes on the right.
 3. **Report** — click **📊 Excel Report** and pick where to save. Done.
+
+## Settings
+
+**⚙ Settings** holds a few options. They're remembered between runs (stored in
+`%AppData%\Ckl-viewer\settings.json`).
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| Color-code status cells | On | Colors the Status column in the report to match the donut. Off leaves Open flagged in red text only. |
+| Include an "Internal Notes" column | On | Adds the trailing team-only notes column to the Vulnerability Details sheet. |
+| Reset changed rules on merge | Off | When merging into a new STIG release, rules whose check/fix text changed are reset to Not Reviewed instead of carrying the old status forward with a re-verify flag. |
 
 <div align="center">
 <img src="docs/img/screenshot-about.png" alt="About Ckl-viewer" width="380" />
@@ -152,15 +171,23 @@ which tests, builds both zips, and publishes a GitHub release automatically.
 ```
 src/CklViewer/
   Models/       Checklist, STIG, and vulnerability domain models
-  Parsing/      CKL (XML), CKLB (JSON), and XCCDF result parsers
+  Parsing/      CKL (XML), CKLB (JSON), XCCDF results, STIG benchmarks,
+                Excel reports, and hardened XML reader settings
   Writing/      CKL and CKLB writers
-  Reports/      Excel report generator (ClosedXML)
+  Merging/      Carries a prior assessment into a new STIG release
+  Reports/      Excel report generator (ClosedXML) and the status pie chart
+  Controls/     DonutChart — a dependency-free WPF donut
+  Settings/     Persisted user options (%AppData%\Ckl-viewer\settings.json)
   ViewModels/   WPF MVVM layer
-tests/CklViewer.Tests/  Round-trip, SCAP, report, security, and UI tests
+tests/CklViewer.Tests/  Round-trip, benchmark import, Excel import, merge,
+                        SCAP, report, filtering, security, and UI tests
 ```
 
-Built with C# / .NET 8 / WPF. The only third-party dependency is
-[ClosedXML](https://github.com/ClosedXML/ClosedXML) for the Excel export.
+Built with C# / .NET 8 / WPF. Two third-party dependencies, both for Excel:
+[ClosedXML](https://github.com/ClosedXML/ClosedXML) for reading and writing
+workbooks, and
+[DocumentFormat.OpenXml](https://github.com/dotnet/Open-XML-SDK) to inject the
+pie chart (ClosedXML cannot create charts).
 
 </details>
 
