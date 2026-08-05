@@ -202,7 +202,19 @@ public class MainViewModel : INotifyPropertyChanged
     private void ApplyFilters()
     {
         FindingsView.Refresh();
-        UpdateSummary();
+        var visible = FindingsView.Cast<FindingRow>().ToList();
+        UpdateSummary(visible);
+
+        // Keep a row selected so the details pane doesn't go blank when the filter
+        // hides whatever was selected before.
+        if (visible.Count == 0)
+        {
+            SelectedFinding = null;
+        }
+        else if (SelectedFinding is null || !visible.Contains(SelectedFinding))
+        {
+            SelectedFinding = visible[0];
+        }
     }
 
     /// <summary>Loads one or more checklist files, appending them to the current session.</summary>
@@ -380,10 +392,12 @@ public class MainViewModel : INotifyPropertyChanged
     private static bool Contains(string haystack, string needle) =>
         haystack.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
-    private void UpdateSummary()
+    private void UpdateSummary() => UpdateSummary(FindingsView.Cast<FindingRow>().ToList());
+
+    private void UpdateSummary(IReadOnlyList<FindingRow> visibleRows)
     {
         // Count what the user can actually see, so the chart and totals track the filter.
-        var vulns = FindingsView.Cast<FindingRow>().Select(f => f.Vulnerability).ToList();
+        var vulns = visibleRows.Select(f => f.Vulnerability).ToList();
         _visibleCount = vulns.Count;
         NotifyCountsChanged();
 

@@ -112,6 +112,63 @@ public class FilterCountTests
     }
 
     [Fact]
+    public void FilteringOutTheSelectedRowSelectsTheFirstVisibleOne()
+    {
+        OnStaThread(() =>
+        {
+            var path = WriteSample();
+            try
+            {
+                var vm = new MainViewModel();
+                vm.LoadChecklists(new[] { path });
+
+                // Select a row that the upcoming filter will hide (the Not a Finding one).
+                var hidden = vm.Findings.First(f => f.Vulnerability.Status == FindingStatus.NotAFinding);
+                vm.SelectedFinding = hidden;
+
+                vm.StatusFilter = "Open";
+
+                // Selection moves to a visible row instead of going blank.
+                Assert.NotNull(vm.SelectedFinding);
+                Assert.NotSame(hidden, vm.SelectedFinding);
+                Assert.Equal(FindingStatus.Open, vm.SelectedFinding!.Vulnerability.Status);
+
+                // A selection that is still visible is left alone.
+                var kept = vm.SelectedFinding;
+                vm.SeverityFilter = MainViewModel.AllFilter;
+                Assert.Same(kept, vm.SelectedFinding);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
+    }
+
+    [Fact]
+    public void FilterMatchingNothingClearsTheSelection()
+    {
+        OnStaThread(() =>
+        {
+            var path = WriteSample();
+            try
+            {
+                var vm = new MainViewModel();
+                vm.LoadChecklists(new[] { path });
+
+                vm.SearchText = "no-rule-matches-this-text";
+
+                Assert.Equal(0, vm.VisibleCount);
+                Assert.Null(vm.SelectedFinding);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
+    }
+
+    [Fact]
     public void EmptySessionShowsNoCount()
     {
         OnStaThread(() =>
