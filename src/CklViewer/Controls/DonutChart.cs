@@ -52,6 +52,10 @@ public sealed class DonutChart : FrameworkElement
             return;
         }
 
+        // A transparent backdrop makes the whole control hit-testable, so mouse moves are
+        // delivered even between slice edges. (Transparent is hit-tested; null is not.)
+        dc.DrawRectangle(Brushes.Transparent, null, new Rect(RenderSize));
+
         var center = new Point(ActualWidth / 2, ActualHeight / 2);
         var outer = diameter / 2 - 2;
         var inner = outer * 0.58;
@@ -137,19 +141,30 @@ public sealed class DonutChart : FrameworkElement
         return $"{segment.Label}: {segment.Value:N0} ({percent:0.#}%)";
     }
 
-    protected override void OnMouseMove(MouseEventArgs e)
+    /// <summary>
+    /// Points the tooltip at whichever slice is under <paramref name="position"/>, so the text
+    /// keeps up as the pointer crosses from one slice to the next while the tooltip is open.
+    /// </summary>
+    internal void UpdateHover(Point position)
     {
-        base.OnMouseMove(e);
-
-        var segment = HitTestSegment(e.GetPosition(this));
+        var segment = HitTestSegment(position);
         if (ReferenceEquals(segment, _hovered))
         {
-            return; // still on the same slice; leave the tooltip alone
+            return; // same slice as last time; nothing to change
         }
 
         // Swapping the ToolTip closes the previous one and lets the next slice's text show.
         _hovered = segment;
         ToolTip = segment is null ? null : DescribeSlice(segment);
+    }
+
+    /// <summary>The text currently attached as the tooltip; exposed for tests.</summary>
+    internal string? TooltipContent => ToolTip as string;
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        UpdateHover(e.GetPosition(this));
     }
 
     protected override void OnMouseLeave(MouseEventArgs e)

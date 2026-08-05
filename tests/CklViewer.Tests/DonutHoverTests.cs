@@ -87,6 +87,52 @@ public class DonutHoverTests
     }
 
     [Fact]
+    public void HoveringPopulatesTheAttachedTooltip()
+    {
+        DonutChart? chart = null;
+        string? overSlice = null;
+        object? tooltipObject = null;
+        Exception? failure = null;
+
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                chart = new DonutChart { Segments = new[] { Seg("Open", 4), Seg("Not a Finding", 8) } };
+                chart.Measure(new Size(200, 200));
+                chart.Arrange(new Rect(0, 0, 200, 200));
+                var visual = new System.Windows.Media.DrawingVisual();
+                using (var dc = visual.RenderOpen())
+                {
+                    typeof(DonutChart)
+                        .GetMethod("OnRender", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .Invoke(chart, new object[] { dc });
+                }
+
+                chart.UpdateHover(new Point(100 + 75, 100)); // 3 o'clock -> the Open slice
+                overSlice = chart.TooltipContent;
+                tooltipObject = chart.ToolTip;
+
+                // Moving into the hole detaches the tooltip again.
+                chart.UpdateHover(new Point(100, 100));
+                Assert.Null(chart.TooltipContent);
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+        });
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Assert.True(thread.Join(TimeSpan.FromSeconds(30)), "Hover test timed out.");
+        Assert.Null(failure);
+
+        Assert.NotNull(tooltipObject);
+        Assert.Equal("Open: 4 (33.3%)", overSlice);
+    }
+
+    [Fact]
     public void TooltipTextCarriesCountAndPercentage()
     {
         // 4 Open out of 12 total = 33.3%.
